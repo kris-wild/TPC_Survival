@@ -63,12 +63,23 @@ E.mod.Sum[3,6] <- "<0.01"
 # Final DF merge
 ###
 Table2 <- rbind(Tb.mod.sum, db.anova.sum, de.anova.sum, E.mod.Sum)
-Table2  <-  Table2[,c(7,1,2,3,4,5,6)]
-Table2 <- Table2 %>% mutate_if(is.numeric, ~round(., 3))
-
+Table2 <- Table2 %>% mutate_if(is.numeric, ~round(., 3)) %>% as.data.frame() %>% mutate(Effects = "")
+Table2[1,8] <- "Sex"
+Table2[2,8] <- "Season"
+Table2[3,8] <- "Season x Sex"
+Table2[4,8] <- "Sex"
+Table2[5,8] <- "Season"
+Table2[6,8] <- "Season x Sex"
+Table2[7,8] <- "Sex"
+Table2[8,8] <- "Season"
+Table2[9,8] <- "Season x Sex"
+Table2[10,8] <- "Sex"
+Table2[11,8] <- "Season"
+Table2[12,8] <- "Season x Sex"
+Table2  <-  Table2[,c(7,8,1,2,3,4,5,6)]
 # Table1 Final table
 Tbl.2 <-flextable(Table2) %>% 
-  hline(i=c(3, 6, 9, 12), j = 1:7, part="body") %>% 
+  hline(i=c(3, 6, 9, 12), j = 1:8, part="body") %>% 
   merge_v(j = "Model Name") %>%  
   autofit(part = "all") %>% 
   bold(bold = TRUE, i = c(2, 3, 5, 6, 7, 8, 9, 11, 12)) %>% 
@@ -312,6 +323,7 @@ setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
 ##### Fig 4 -Activity, Tb, Te, Tset by hour
 Tb.predict.dat <- readRDS(file = "Final.Analysis/Final.Figure.data/Final.Activity.mins.data.RDS") %>% filter(Sex != "ZZf")
 Tb.predict.dat$Hour <- as.factor(Tb.predict.dat$HR)
+# summary
 Male.Tb <- Tb.predict.dat%>% filter(Sex != "ZWf") %>% 
   group_by(Date, Hour) %>% 
   ungroup() %>% 
@@ -326,6 +338,7 @@ Male.Activity$Season <- factor(Male.Activity$Season, c("Spring", "Summer", "Autu
 
 # Te data
 Te <- readRDS(file = "Final.Analysis/Final.Figure.data/Te.sex.final.RDS") 
+Te$Type <- gsub("open_tree", "Open_tree", Te$Type)
 Te.data.fig <- Te %>% 
   group_by(hr, Season, Type) %>% 
   summarise(Te = mean(Te),
@@ -342,10 +355,11 @@ male.tb.te.act.fig <- ggplot() +
              size = 2, shape = 17)+
   geom_point(data = Te.data.fig, aes(HR,Te, fill = Type, color = Type)) +
   geom_line(data = Male.Tb, aes(HR,Tb), size = 0.3)+
+  scale_y_continuous(sec.axis = sec_axis(~ ., name = "Activity (min/hr)"))+
   geom_line(data = Male.Activity, aes(HR,Movement.HR), size = 0.3)+
   geom_hline(yintercept=32.03080, linetype="dashed", color = "grey34")+
   geom_hline(yintercept=25.33080, linetype="dashed", color = "grey34")+ 
-  labs(x = NULL, y = "Temperature (°C) or Activity (min/h)") +
+  labs(x = NULL, y = "Temperature (°C)") +
   facet_grid(~Season) +
   coord_cartesian(xlim = c(5, 21))+
   theme_bw()
@@ -369,11 +383,12 @@ female.tb.te.act.fig <- ggplot() +
              fill = "black", color = "black", 
              size = 2, shape = 17)+
   geom_point(data = Te.data.fig, aes(HR,Te, fill = Type, color = Type)) +
+  scale_y_continuous(sec.axis = sec_axis(~ ., name = "Activity (min/hr)"))+
   geom_line(data = Female.Tb, aes(HR,Tb), size = 0.3)+
   geom_line(data = Female.Activity, aes(HR,Movement.HR), size = 0.3)+
   geom_hline(yintercept=33.80642, linetype="dashed", color = "grey34")+
   geom_hline(yintercept=26.97309, linetype="dashed", color = "grey34")+ 
-  labs(x = "Time of day (hr)", y = "Temperature (°C) or Activity (min/h)") +
+  labs(x = "Time of day (hr)", y = "Temperature (°C)") +
   coord_cartesian(xlim = c(5, 21))+
   facet_grid(~Season) +
   theme_bw()
