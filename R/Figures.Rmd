@@ -1,0 +1,803 @@
+---
+title: "Methods and Results"
+author: Kristoffer Wild
+date: "`r Sys.Date()`"
+output: 
+  word_document:
+    reference_docx: template.docx
+editor_options: 
+  chunk_output_type: console
+---
+
+``````{r setup, include=FALSE, eval = T, echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+options(digits = 2)
+rm(list=ls())
+sessionInfo()
+# Packages
+pacman::p_load("dplyr", "tidyverse", "lubridate", "ggplot2", "plotly", "pbapply","car", "readr", "lmerTest", "emmeans", "AICcmodavg", "nls.multstart", "broom", "purrr", "plotrix", "AICcmodavg", "MuMIn", "stargazer", "jtools", "huxtable", "officer", "grid", "png", "ggimage", "rTPC", "nls.multstart", "ggrepel", "mgcv", "gratia", "gammit", "lubridate", "lmerTest","performance", "kableExtra","flextable")
+```
+# Tables & Figures
+\newpage
+Table 2. ANOVA table for predicted body temperature (Tb Predict), accuracy of thermoregulation (db), thermal quality of habitat (de), and effectiveness of thermoregulation (E) for *Pogona vitticeps*. Each estimate is compared across season, sex, and the interaction. Depending on the id of lizard (or model id) was treated as a repeated (random) variable. Bold values indicate significant difference.
+```{r TB,echo= FALSE}
+# bring in, combined and rename tables
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+#######
+# Tb body temperature 
+#######
+db.sex.all.final <- readRDS(file = "Final.Analysis/Final.Figure.data/db.final.RDS")
+Tb.sample.size <- db.sex.all.final %>% ungroup() %>% group_by(Season) %>% summarise(n =n())
+Tb.mod <- lmer(Tb  ~ Sex + Season + Season*Sex + (1|POVI), db.sex.all.final)
+Tb.mod.sum <- round(as.data.frame(anova(Tb.mod)), digits = 2) %>% mutate("Model Name" = "Tb Predict") 
+Tb.mod.sum[2,6] <- "<0.01"
+Tb.mod.sum[3,6] <- "<0.01"
+#######
+# db values 
+#######
+# note these data are summarised by inividual, date, by the hour. Season, sex are unique
+db.final.mod <- lmer(individual_db ~ Sex + Season + Season*Sex + (1|POVI), db.sex.all.final)
+db.anova.sum <- round(as.data.frame(anova(db.final.mod)), digits = 2)%>% mutate("Model Name" = "db") 
+db.anova.sum[2,6] <- "<0.01"
+db.anova.sum[3,6] <- "<0.01"
+####################  
+# de values 
+####################  
+#analysis for de by sex and season
+Te <- readRDS(file = "Final.Analysis/Final.Figure.data/Te.sex.final.RDS") 
+definal.mod <- lmer(de ~ Te.Analysis + Season + Te.Analysis*Season + (1|Model_.), Te)
+de.anova.sum <- round(as.data.frame(anova(definal.mod)), digits = 2) %>% mutate("Pr(>F)" = "< 0.01", "Model Name" = "de")
+
+####################  
+# Eindex 
+####################  
+E_final_season <- readRDS(file = "Final.Analysis/Final.Figure.data/E_season_sex_individual.RDS")
+E.mod <- lmer(indvidual_season_E  ~ Sex + Season + Season*Sex + (1|POVI), E_final_season)
+E.mod.Sum <- round(as.data.frame(anova(E.mod)), digits = 2) %>% mutate("Model Name" = "E")
+E.mod.Sum[2,6] <- "<0.01"
+E.mod.Sum[3,6] <- "<0.01"
+
+
+###
+# Final DF merge
+###
+Table2 <- rbind(Tb.mod.sum, db.anova.sum, de.anova.sum, E.mod.Sum)
+Table2  <-  Table2[,c(7,1,2,3,4,5,6)]
+Table2 <- Table2 %>% mutate_if(is.numeric, ~round(., 3))
+
+# Table1 Final table
+Tbl.2 <-flextable(Table2) %>% 
+  hline(i=c(3, 6, 9, 12), j = 1:7, part="body") %>% 
+  merge_v(j = "Model Name") %>%  
+  autofit(part = "all") %>% 
+  bold(bold = TRUE, i = c(2, 3, 5, 6, 7, 8, 9, 11, 12)) %>% 
+  bold(bold = FALSE, j = 1) %>% 
+  align(align ="center", part = "all") %>% 
+  font(part = "all", fontname = "Times New Roman") %>% 
+  fix_border_issues() 
+knitr::knit_print(Tbl.2)
+```
+\newpage
+
+```{r Theoretical fig, echo = FALSE, include = FALSE}
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+#save this figure in the correct folder and bring in to knit
+knitr::include_graphics("./Final.Analysis/Final.Figures/Figure1_Theoretical.pdf")
+```
+Figure 1. The overall workflow for the experimental design used to determine trade-offs associated with thermoregulation and how this relates to survival. Panel A we used a laboratory thermal for two experiments: 1) to measure preferred body temperature (Tset) and how this varies by sex and 2) to determine the relationship between surface temperatures  (Tsurf) measured with accelerometers and internal body temperatures to determine correction for accelerometer temperatures in the field (Tb predict). Panel B we investigated seasonal thermoregulation and associated proxies with the use of accelerometers. Panel C copper pipes were placed in various microhabitats to determine the available thermal environment for lizards in the field (Te). Panel D lists the proxies that were estimated from experiments A-C. These proxies were then used as covariates to determine how they relate to the fate of animals while accounting for sex, during the spring season when they experience their highest predation pressures (Panel E). 
+\newpage
+```{r Fig2 Tb db de,echo= FALSE}
+#############
+###### Fig 2A|B - Tb within Tset
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+db.sex.all.final <- readRDS("Final.Analysis/Final.Figure.data/db.final.RDS")
+### arranging data for figures
+# Tb vs Te within Tsel across seasons 
+Tb.mod <- lmer(Tb  ~ Sex + Season + Season*Sex + (1|POVI), db.sex.all.final)
+Tb.mod.sum <- anova(Tb.mod) # NS Sex; Significant interaction and season
+Tb.anova.pairwise <- emmeans(Tb.mod, pairwise ~ Sex |Season) # Summer differences
+Tb.Sex.Season.df <- as.data.frame(Tb.anova.pairwise$emmeans) %>% 
+  select(c(Season, emmean, SE, Sex, asymp.UCL , asymp.LCL))
+Tb.Sex.Season.df <- Tb.Sex.Season.df %>% 
+  rename(upper.CL = asymp.UCL, lower.CL = asymp.LCL)
+### Te by season and sex
+Te <- readRDS(file = "Final.Analysis/Final.Figure.data/Te.sex.final.RDS") 
+Te.dat <- Te %>% group_by(Season, Model_.) %>% summarise(Te = mean(Te))
+Te.mod <- lmer(Te  ~ Season  + (1|Model_.), Te.dat)
+Te.mod.sum <- anova(Te.mod) # All different
+Te.anova.pairwise <- emmeans(Te.mod, pairwise ~ Season) 
+Te.Sex.Season.df <- as.data.frame(Te.anova.pairwise$emmeans) %>% 
+  mutate(Sex = "Te") %>% 
+  select(c(Season, emmean, SE, Sex, lower.CL, upper.CL))
+# final df for figure
+Tb.vs.Te.fig.dat <- rbind(Te.Sex.Season.df, Tb.Sex.Season.df)
+Tb.vs.Te.fig.dat <- mutate(Tb.vs.Te.fig.dat, Season = factor(Season,
+                              levels = c("Spring",
+                                         "Summer",
+                                         "Autumn",
+                                         "Winter"))) %>%
+  group_by(Season)
+# Sex      IQR  Mean.Tb    range upper.IQR lower.IQR
+# ZZm 6.700000 28.68080 3.350000  32.03080  25.33080
+# bring in activity data
+Male.Tb.Te <- Tb.vs.Te.fig.dat %>% filter(Sex != "ZWf")
+Male.Tb.Te$Sex <- gsub("ZZm", "Male", Male.Tb.Te$Sex)
+Male.Tb.Te <- mutate(Male.Tb.Te, Sex = factor(Sex, levels = c("Te","Male"))) %>%
+  group_by(Sex)
+######
+### Male plot Fig 2A # ~T[b]
+Male.Tb.vs.Te.fig <- ggplot(Male.Tb.Te, aes(x=Season, y=emmean, colour=Sex, group=Sex, shape = Sex)) + 
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), colour="black", width=.1) +
+  geom_line(aes(linetype=Sex)) +
+  geom_point(aes(shape=Sex, color=Sex), size=2)+
+  scale_shape_manual(values=c(8, 21))+
+  scale_color_manual(values=c("black","black")) +
+  geom_hline(yintercept=32.03080, linetype="dashed", color = "grey34")+
+  geom_hline(yintercept=25.33080, linetype="dashed", color = "grey34")+ 
+  scale_y_continuous(breaks=c(16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38))+
+  coord_cartesian(ylim = c(16, 38))+
+  annotate("text", x = 4, y = 32.6, label = "Tset upper")+
+  annotate("text", x = 4, y = 24.8, label = "Tset lower")+
+  annotate("text", x = .95, y = 38, label = "Male Tb", fontface = "bold", size = 4.5)+
+  xlab(NULL) +
+  ylab(expression(~T["b perdict"]~ "(°C)"))+
+  theme_bw() +
+  theme(legend.position = c(.85, .9))+ 
+  theme(legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank())  
+# ZWf 6.833333 30.38976 3.416667  33.80642  26.97309
+Female.Tb.Te <- Tb.vs.Te.fig.dat %>% filter(Sex != "ZZm")
+Female.Tb.Te$Sex <- gsub("ZWf", "Female", Female.Tb.Te$Sex)
+Female.Tb.Te <- mutate(Female.Tb.Te, Sex = factor(Sex, levels = c("Te","Female"))) %>%
+  group_by(Sex)
+######
+### Female Plot Fig 2B
+Female.Tb.vs.Te.fig <- ggplot(Female.Tb.Te, aes(x=Season, y=emmean, colour=Sex, group=Sex, shape = Sex)) + 
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), colour="black", width=.1) +
+  geom_line(aes(linetype=Sex)) +
+  geom_point(aes(shape=Sex, color=Sex), size=2)+
+  scale_shape_manual(values=c(8, 19))+
+  scale_color_manual(values=c("black", "#999999")) +
+  geom_hline(yintercept=33.80642, linetype="dashed", color = "grey34")+
+  geom_hline(yintercept=26.97309, linetype="dashed", color = "grey34")+ 
+  scale_y_continuous(breaks=c(16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38))+
+  coord_cartesian(ylim = c(16, 38))+
+  annotate("text", x = .9, y = 34.3, label = "Tset upper")+
+  annotate("text", x = .9, y = 26.4, label = "Tset lower")+
+  annotate("text", x = .95, y = 38, label = "Female Tb", fontface = "bold", size = 4.5)+
+  ylab(expression(~T["b perdict"]~ "(°C)"))+
+  xlab(NULL)+
+  theme_bw() +
+  theme(legend.position = c(.85, .9))+ 
+  theme(legend.title = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank())
+######
+### Fig2A|B Final:TB by sex
+Fig.2.Tb.Te.figure <- ggpubr::ggarrange(Male.Tb.vs.Te.fig, Female.Tb.vs.Te.fig,
+                    labels = c("A", "B"), 
+                    font.label = (size = 14), 
+                    hjust = - 0.95,
+                    vjust = 2.0 ,
+                    ncol = 2, nrow = 1)
+
+#############
+##### Fig 2C - Accuracy of thermoregulation male and females
+E_final_season <- readRDS(file = "Final.Analysis/Final.Figure.data/E_season_sex_individual.RDS")
+### arrange data for figure
+db.mod <- lmer(mean_individual_mean_db  ~ Sex + Season + Season*Sex + (1|POVI), E_final_season)
+db.mod.Sum <- anova(db.mod) # season and season*sex sig 
+db.mod.anova.pairwise <- emmeans(db.mod, pairwise ~ Sex |Season) 
+season.db <- as.data.frame(db.mod.anova.pairwise$emmeans)# significant difference spring
+Season <- c("Spring","Summer","Autumn", "Winter")
+season.db$Season <- factor(season.db$Season, levels = Season)
+season.db$Sex <- gsub("ZZm", "Male", season.db$Sex)
+season.db$Sex <- gsub("ZWf", "Female", season.db$Sex)
+######
+### 2C db plot by sex
+Fig.2C.Accuracy.Thermoregulation.db <- ggplot(season.db, aes(x=Season, y=emmean, colour=Sex, group=Sex, shape = Sex)) +
+  geom_errorbar(aes(ymin=emmean-SE, ymax=emmean+SE), colour="black", width=.1) +
+  geom_line(aes(linetype=Sex)) +
+  geom_point(aes(shape=Sex, color=Sex), size=2)+
+  scale_shape_manual(values=c(19, 21))+
+  scale_color_manual(values=c("#999999", "black")) +
+  scale_y_continuous(breaks=c(0, 1, 2, 3, 4.0, 5, 6, 7, 8, 9, 10))+
+  coord_cartesian(ylim = c(0, 10))+
+  ylab("Thermoregulation accuracy (°C)")+
+  annotate("text", x = .9, y = 0, label = "Accurate",fontface = "bold")+
+  annotate("text", x = .9, y = 10, label = "Inaccurate", fontface = "bold")+
+  annotate("text", x = 1, y = 3.2, label = "*", fontface = "bold", size = 8)+ # spring differences
+  annotate("text", x = 2, y = 1.75, label = "*", fontface = "bold", size = 8)+ # summer differences
+  annotate("text", x = 4, y = 7.75, label = "*", fontface = "bold", size = 8)+ # winter differences
+  xlab(NULL)+
+  theme_bw() +
+  theme(legend.position = c(.85, .1))+ 
+  theme(legend.title = element_blank())
+######
+### Fig 2D de values for individual models by season
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+Te <- readRDS(file = "Final.Analysis/Final.Figure.data/Te.sex.final.RDS") 
+######
+### arranging data for plot
+definal.mod <- lmer(de ~ Te.Analysis + Season + Te.Analysis*Season + + (1|Model_.), Te)
+de.anova.sum <- round(as.data.frame(anova(definal.mod)), digits = 3) %>% mutate("Pr(>F)" = "< 0.01")# significant season sex interaction
+de.mod.season.sex <- emmeans(definal.mod, pairwise ~ Te.Analysis | Season) # this just says the available environment is easier for females to thermoregulate other than in winter it's the same
+de.mod.season.sex.tbl<- as.data.frame(de.mod.season.sex$emmeans)
+Season <- c("Spring","Summer","Autumn", "Winter")
+de.mod.season.sex.tbl$Season <- factor(de.mod.season.sex.tbl$Season, levels = Season)
+de.mod.season.sex.tbl$Te.Analysis <- gsub("de_ZZm", "de Male", de.mod.season.sex.tbl$Te.Analysis)
+de.mod.season.sex.tbl$Te.Analysis <- gsub("de_ZWf", "de Female", de.mod.season.sex.tbl$Te.Analysis)
+######
+### Fic 2D de plot
+Fig.2D.Accuracy.Thermoregulation.de <- ggplot(de.mod.season.sex.tbl, aes(x=Season, y=emmean, colour=Te.Analysis, group=Te.Analysis, shape = Te.Analysis)) +
+  geom_errorbar(aes(ymin=emmean-SE, ymax=emmean+SE), colour="black", width=.1) +
+  geom_line(aes(linetype=Te.Analysis)) +
+  geom_point(aes(shape=Te.Analysis, color=Te.Analysis), size=2)+
+  scale_shape_manual(values=c(19, 21))+
+  scale_color_manual(values=c("#999999", "black")) +
+  scale_y_continuous(breaks=c(0, 1, 2, 3, 4.0, 5, 6, 7, 8, 9, 10))+
+  coord_cartesian(ylim = c(0, 10))+
+  ylab("Thermal quality of habitat (°C)")+
+  annotate("text", x = .9, y = 0, label = "Favorable",fontface = "bold")+
+  annotate("text", x = .9, y = 10, label = "Unfavorable", fontface = "bold")+
+  annotate("text", x = 1, y = 3.2, label = "*", fontface = "bold", size = 8)+ # spring differences
+  annotate("text", x = 2, y = 4.5, label = "*", fontface = "bold", size = 8)+ # summer differences
+  annotate("text", x = 3, y = 4.5, label = "*", fontface = "bold", size = 8)+ # Autumn differences
+  xlab(NULL)+
+  theme_bw() +
+  theme(legend.position = c(.85, .1))+ 
+  theme(legend.title = element_blank())
+######
+# final arrangment for 2C & 2D
+Fig.2.db.de.figure <- ggpubr::ggarrange(Fig.2C.Accuracy.Thermoregulation.db, Fig.2D.Accuracy.Thermoregulation.de,
+                    labels = c("C", "D"),
+                    font.label = (size = 14), 
+                    hjust = - 0.95,
+                    vjust = 2.0 ,
+                    ncol = 2, nrow = 1)
+######
+# FINAL FIGURE MERGE
+Figure_2_final <- ggpubr::ggarrange(Fig.2.Tb.Te.figure, Fig.2.db.de.figure, 
+                    hjust = - 0.95,
+                    vjust = 2.0 ,
+                    ncol = 1, nrow = 2)
+
+
+Figure_2_final
+#save this figure in the correct folder and bring in to knit
+knitr::include_graphics("./Final.Analysis/Final.Figures/Figure2_Thermal_Pars.pdf")
+```
+Figure 2.
+\newpage
+```{r Fig3,echo= FALSE}
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+######
+### arranging data
+E_final_season <- readRDS(file = "Final.Analysis/Final.Figure.data/E_season_sex_individual.RDS")
+E_final_season$Season <- factor(E_final_season$Season, c("Spring", "Summer", "Autumn", "Winter"))
+E.mod <- lmer(indvidual_season_E  ~ Sex + Season + Season*Sex + (1|POVI), E_final_season)
+E.mod.Sum <- anova(E.mod) # significant all around
+E.anova.pairwise <- emmeans(E.mod, pairwise ~ Sex |Season)
+Season <- as.data.frame(E.anova.pairwise$emmeans)
+Season$Sex <- gsub("ZWf", "Female", Season$Sex)
+Season$Sex <- gsub("ZZm", "Male", Season$Sex)
+######
+### Figure 3 plot
+Fig.3.E.index.fig <- ggplot(Season, aes(x=Season, y=emmean, fill=Sex)) + 
+  scale_y_continuous(breaks=c(-0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0))+
+  coord_cartesian(ylim = c(-0.3, 1.0))+
+  geom_bar(stat="identity", color="black", 
+           position=position_dodge()) +
+  geom_errorbar(aes(ymin=emmean -SE, ymax=emmean +SE), width=.2,
+                position=position_dodge(.9))+
+  labs(x="Season", y = "E index")+
+  annotate("text", x = 1.5, y = .95, label = "Thermoregulator",fontface = "bold")+
+  annotate("text", x = 1.5, y = -.05, label = "Thermoconformer", fontface = "bold")+
+  annotate("text", x = .9, y = .86, label = "*", fontface = "bold", size = 8)+ # spring differences
+  geom_segment(aes(x = .6, y = .85, xend = 1.2, yend = .85))+
+  theme_classic() +
+  theme(legend.position = c(.90, .80))+
+  scale_fill_manual(values=c("#999999", "white"))
+
+#save this figure in the correct folder and bring in to knit
+knitr::include_graphics("./Final.Analysis/Final.Figures/Figure3_Eindex.pdf")
+```
+Figure 3. E index (effectiveness of thermoregulation) by sex and season in *Pogona vitticeps*. Values are grand means accounting for all individuals for each season and error bars are ±1 standard error of the grand mean. The asterisk symbol indicates a significant difference between sex when comparing mean differences for that season using a Tukey-Kramer post-hoc test..
+\newpage
+```{r Fig4 HR activity tb te,echo= FALSE}
+#############
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+##### Fig 4 -Activity, Tb, Te, Tset by hour
+Tb.predict.dat <- readRDS(file = "Final.Analysis/Final.Figure.data/Final.Activity.mins.data.RDS") %>% filter(Sex != "ZZf")
+Tb.predict.dat$Hour <- as.factor(Tb.predict.dat$HR)
+Male.Tb <- Tb.predict.dat%>% filter(Sex != "ZWf") %>% 
+  group_by(Date, Hour) %>% 
+  ungroup() %>% 
+  group_by(Hour, Season, Sex) %>% 
+  summarise(Tb = mean(Tb),
+            HR = unique(HR))
+Male.Tb$Season <- factor(Male.Tb$Season, c("Spring", "Summer", "Autumn", "Winter"))
+# activity data
+mydata.final.mm<- readRDS(file = "Final.Analysis/Final.Figure.data/activity.fig.data.rds")
+Male.Activity <- mydata.final.mm %>% filter(Sex != "ZWf")
+Male.Activity$Season <- factor(Male.Activity$Season, c("Spring", "Summer", "Autumn", "Winter"))
+
+# Te data
+Te <- readRDS(file = "Final.Analysis/Final.Figure.data/Te.sex.final.RDS") 
+Te.data.fig <- Te %>% 
+  group_by(hr, Season, Type) %>% 
+  summarise(Te = mean(Te),
+            HR = unique(HR))
+Te.data.fig$Season <- factor(Te.data.fig$Season, c("Spring", "Summer", "Autumn", "Winter"))
+
+# male plot
+male.tb.te.act.fig <- ggplot() +  
+  geom_point(data = Male.Tb, aes(HR,Tb), 
+             fill = "white", color = "black",
+             size = 2.2, shape = 21)+
+  geom_point(data = Male.Activity, aes(HR,Movement.HR), 
+             fill = "black", color = "black", 
+             size = 2, shape = 17)+
+  geom_point(data = Te.data.fig, aes(HR,Te, fill = Type, color = Type)) +
+  geom_line(data = Male.Tb, aes(HR,Tb), size = 0.3)+
+  geom_line(data = Male.Activity, aes(HR,Movement.HR), size = 0.3)+
+  geom_hline(yintercept=32.03080, linetype="dashed", color = "grey34")+
+  geom_hline(yintercept=25.33080, linetype="dashed", color = "grey34")+ 
+  labs(x = NULL, y = "Temperature (°C) or Activity (min/h)") +
+  facet_grid(~Season) +
+  coord_cartesian(xlim = c(5, 21))+
+  theme_bw()
+
+# female
+Female.Tb <- Tb.predict.dat%>% filter(Sex != "ZZm") %>% 
+  group_by(Date, Hour) %>% 
+  ungroup() %>% 
+  group_by(Hour, Season, Sex) %>% 
+  summarise(Tb = mean(Tb),
+            HR = unique(HR))
+Female.Tb$Season <- factor(Female.Tb$Season, c("Spring", "Summer", "Autumn", "Winter"))
+# activity data
+Female.Activity <- mydata.final.mm %>% filter(Sex != "ZZm")
+Female.Activity$Season <- factor(Female.Activity$Season, c("Spring", "Summer", "Autumn", "Winter"))
+female.tb.te.act.fig <- ggplot() +  
+  geom_point(data = Female.Tb, aes(HR,Tb), 
+             fill = "#999999", color = "black",
+             size = 2.2, shape = 21)+
+  geom_point(data = Female.Activity, aes(HR,Movement.HR), 
+             fill = "black", color = "black", 
+             size = 2, shape = 17)+
+  geom_point(data = Te.data.fig, aes(HR,Te, fill = Type, color = Type)) +
+  geom_line(data = Female.Tb, aes(HR,Tb), size = 0.3)+
+  geom_line(data = Female.Activity, aes(HR,Movement.HR), size = 0.3)+
+  geom_hline(yintercept=33.80642, linetype="dashed", color = "grey34")+
+  geom_hline(yintercept=26.97309, linetype="dashed", color = "grey34")+ 
+  labs(x = "Time of day (hr)", y = "Temperature (°C) or Activity (min/h)") +
+  coord_cartesian(xlim = c(5, 21))+
+  facet_grid(~Season) +
+  theme_bw()
+
+#############
+# Fig4 Final: Tb, Te, Activity
+Fig.4.Tb.Te.Activity.fig<- ggpubr::ggarrange(male.tb.te.act.fig, female.tb.te.act.fig,
+                                  font.label = (size = 10), 
+                                  hjust = - 0.7,
+                                  vjust = 2.0 ,
+                                  labels = c( "A-Male", "B-Female"),
+                                  ncol = 1, nrow = 2)
+
+#save this figure in the correct folder and bring in to knit
+knitr::include_graphics("./Final.Analysis/Final.Figures/Figure4_Activity_Tbs.pdf")
+```
+Figure 4. Grand mean predicted body temperature (T_(b Predict)), operative temperatures, and time spent in locomotory activity as a function of time of day for free-ranging *Pogona vitticeps*. Panel A are data for males: where open circles denote male T_(b Predict) and panel B are data for females: where closed grey circles denote female T_(b Predict). The preferred body temperature ranges (T_set) for each respective sex are represented by dashed line. Triangles represent activity for each hour (min) for each sex. Colour circles represent mean operative temperature for each respective habitat.   
+\newpage
+```{r Fig5 TPC ,echo= FALSE}
+#############
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+##### TPC data
+data.gam <- readRDS(file = "Final.Analysis/Final.Figure.data/data.temp.gam.analysis.rds")
+Season.Sex.Interaction.Povi <- readRDS(file = "Models/Season.Sex.Interaction.Povi.rds")
+#data.gam$fit <- predict(Season.Sex.Interaction.Povi, type = "response")
+#data.gam$se <- predict(Season.Sex.Interaction.Povi, type = "se")
+
+# set up data
+data.gam$Season <- factor(data.gam$Season, c("Spring", "Summer", "Autumn", "Winter"))
+data.gam$Sex <- factor(data.gam$Sex, c("ZWf", "ZZm"))
+data.gam$Sex <- gsub("ZWf", "Female", data.gam$Sex)
+data.gam$Sex <- gsub("ZZm", "Male", data.gam$Sex)
+data.gam <- data.gam %>% group_by(Season, Sex)
+data.gam$temp <- as.factor(data.gam$temp)
+# summary for figure
+data.gam.fig <- data.gam %>% group_by(Season, Sex, temp, POVI) %>%
+  summarise(Tb = mean(Tb),
+            percent95.ms2 = mean(percent95.ms2 ))
+data.gam.fig$temp <- as.numeric(data.gam.fig$temp)
+####### Summer 
+Spring <- data.gam.fig %>% filter(Season == "Spring")
+Spring.plot <- ggplot(Spring, aes(x=temp, y=percent95.ms2, color=Sex))+  
+  geom_point(aes(shape=Sex, color=Sex), size=2)+
+  scale_shape_manual(values=c(17, 21))+
+  scale_color_manual(values=c("#999999", "grey11")) +
+  ylab(bquote("95th"~"percentile"~"of"~"acceleration ms"^-2)) +
+  xlab(expression(T[b~Predict]))+
+  coord_cartesian(xlim =c(5, 50), ylim = c(0, 1.8))+
+  scale_x_continuous(breaks=seq(0,50,5))+
+  scale_y_continuous(breaks = seq(0, 1.8, .2))+
+  geom_smooth(method = "gam")+ 
+  theme_bw()+
+  ggtitle("Spring")+
+  theme(legend.position="none",
+        plot.title = element_text(size=14, face="bold", hjust = 0.5))
+####### Summer 
+Summer <- data.gam.fig %>% filter(Season == "Summer")
+Summer.plot <- ggplot(Summer, aes(x=temp, y=percent95.ms2, color=Sex))+
+  geom_point(aes(shape=Sex, color=Sex), size=2)+
+  scale_shape_manual(values=c(17, 21))+
+  scale_color_manual(values=c("#999999", "grey11")) +
+  xlab(expression(T[b~Predict]))+
+  coord_cartesian(xlim =c(5, 50), ylim = c(0, 1.8))+
+  scale_x_continuous(breaks=seq(0,50,5))+
+  scale_y_continuous(breaks = seq(0, 1.8, .2))+
+  geom_smooth(method = "gam")+ 
+  theme_bw()+
+  ggtitle("Summer") +
+  theme(legend.position="none",
+        axis.title.y = element_blank(),
+        plot.title = element_text(size=14, face="bold", hjust = 0.5))
+####### Autumn 
+Autumn <- data.gam.fig %>% filter(Season == "Autumn")
+Autumn.plot <- ggplot(Autumn, aes(x=temp, y=percent95.ms2, color=Sex))+
+  geom_point(aes(shape=Sex, color=Sex), size=2)+
+  scale_shape_manual(values=c(17, 21))+
+  scale_color_manual(values=c("#999999", "grey11")) +
+  xlab(expression(T[b~Predict])) +
+  coord_cartesian(xlim =c(5, 50), ylim = c(0, 1.8))+
+  scale_x_continuous(breaks=seq(0,50,5))+
+  scale_y_continuous(breaks = seq(0, 1.8, .2))+
+  geom_smooth(method = "gam")+ 
+  theme_bw()+
+  ggtitle("Autumn") +
+  theme(legend.position="none",
+        axis.title.y = element_blank(),
+        plot.title = element_text(size=14, face="bold", hjust = 0.5))
+####### Winter 
+Winter <- data.gam.fig %>% filter(Season == "Winter")
+Winter.plot <- ggplot(Winter, aes(x=temp, y=percent95.ms2, color=Sex))+
+  geom_point(aes(shape=Sex, color=Sex), size=2)+
+  scale_shape_manual(values=c(17, 21))+
+  scale_color_manual(values=c("#999999", "grey11")) +
+  xlab(expression(T[b~Predict])) +
+  coord_cartesian(xlim =c(5, 50), ylim = c(0, 1.8))+
+  scale_x_continuous(breaks=seq(0,50,5))+
+  scale_y_continuous(breaks = seq(0, 1.8, .2))+
+  geom_smooth(method = "gam")+ 
+  theme_bw()+
+  ggtitle("Winter") +
+  theme(axis.title.y = element_blank(),
+        legend.position = c(.80, .80), 
+        plot.title = element_text(size=12, face="bold", hjust = 0.5))
+
+# final plot
+p<- cowplot::plot_grid(Spring.plot, Summer.plot, Autumn.plot, Winter.plot, ncol=4)
+#save this figure in the correct folder and bring in to knit
+knitr::include_graphics("./Final.Analysis/Final.Figures/Figure5_TPC.pdf")
+```
+Figure 5. Field thermal performance curves across season and sex in free-ranging *Pogona vitticeps*. Data were extracted from top-performing GAMM (Table S5). Each point is the predicted mean performance (95^th percentile of acceleration) for a given temperature across all individuals for each season and by sex. Females are denoted by the triangles and grey fitted lines, and males are denoted by open circles and black fitted lines. light grey bands denote SE of model fit. 
+\newpage
+```{r Fig 6 E curve ,echo= FALSE}
+#############
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+Reg.dat <- read.csv(file = "Final.Analysis/Final.Figure.data/MARK.E.index.regression.csv")
+######
+### survival regression for best fit
+Fig6.Mark <- ggplot(data=Reg.dat, aes(x=E, y=X1.S, ymin=X1.S-SE , ymax=X1.S+SE)) + 
+  geom_line() + 
+  geom_ribbon(alpha=0.5) +  
+  xlim(0.25, 1)+
+  ylim(.4, 1)+
+  xlab("Avg Mins Moved") + 
+  ylab("Survival Estimate")+
+  scale_y_continuous(breaks=c(0.5, 0.6, 0.7, 0.8, 0.9, 1.0))+
+  scale_x_continuous(breaks=c(0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9, 1.0))+
+  coord_cartesian(xlim =c(0.2855, .96), ylim = c(.5, 0.9))+
+  labs(x = "E index", y = "Survivorship (%)") +
+  theme_bw()+
+  theme(plot.title = element_text(size=12, face="bold", hjust = 0.5))
+
+#save this figure in the correct folder and bring in to knit
+knitr::include_graphics("./Final.Analysis/Final.Figures/Figure6_Survival.pdf")
+```
+Figure 6. Survivorship as a function of effectiveness of thermoregulation (E index) for free-ranging *Pogona vitticeps*. Data are extracted from candidate model in program Mark. E index generally range from 0-1, where values near zero indicate thermoconformity and values towards 1 indicate precise thermoregulation.
+\newpage
+# Supplementary information
+Table S2. Tukey-Kramer multiple comparisons from Tb predict model (Table 2). Contrasts were extracted from season x sex interaction. 
+```{r S2, echo = FALSE, include = FALSE}
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+#######
+# Tb body temperature for individuals by sex*season
+#######
+db.sex.all.final <- readRDS(file = "Final.Analysis/Final.Figure.data/db.final.RDS")
+db.sex.all.final$Sex <- gsub("ZWf", "Female", db.sex.all.final$Sex)
+db.sex.all.final$Sex <- gsub("ZZm", "Male", db.sex.all.final$Sex)
+Tb.sample.size <- db.sex.all.final %>% ungroup() %>% group_by(Season) %>% summarise(n =n())
+Tb.mod <- lmer(Tb  ~ Sex + Season + Season*Sex + (1|POVI), db.sex.all.final)
+Tb.mod.sum <- round(as.data.frame(anova(Tb.mod)), digits = 3) # NS Sex; Significant interaction and season
+Tb.anova.pairwise <- emmeans(Tb.mod, pairwise~ Sex |Season,  lmerTest.limit = 67884) # Just summer differences 
+#  just season
+Tb.anova.pairwise.season <- emmeans(Tb.mod, pairwise ~ Season, lmerTest.limit = 67884) 
+
+# Table S2
+# TABLE S2 by season * sex interaction - Contrasts 
+TableS2 <- as.data.frame(Tb.anova.pairwise$contrasts)%>%
+  mutate_if(is.numeric, ~round(., 2))
+Tbl.S2 <-flextable(TableS2) %>% 
+  autofit(part = "all") %>% 
+  bold(bold = TRUE, i = c(3)) %>%
+  align(align ="center", part = "all") %>% 
+  font(part = "all", fontname = "Times New Roman")
+knitr::knit_print(Tbl.S2)
+```
+\newpage
+Table S3. Tukey-Kramer multiple comparisons from Tb predict model (Table 2). Contrasts were extracted from overall seasonal effect.  
+```{r S3, echo = FALSE, include = FALSE}
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+db.sex.all.final <- readRDS(file = "Final.Analysis/Final.Figure.data/db.final.RDS")
+Tb.sample.size <- db.sex.all.final %>% ungroup() %>% group_by(Season) %>% summarise(n =n())
+Tb.mod <- lmer(Tb  ~ Sex + Season + Season*Sex + (1|POVI), db.sex.all.final)
+Tb.anova.pairwise.season <- emmeans(Tb.mod, pairwise ~ Season, lmerTest.limit = 67884) 
+
+# Table S3
+S3.Tb.Sex.Season.tbl <- as.data.frame(Tb.anova.pairwise.season$contrasts) %>%
+  mutate_if(is.numeric, ~round(., 2))
+S3.Tb.Sex.Season.tbl[1,6]= "<0.01"
+S3.Tb.Sex.Season.tbl[2,6]= "<0.01"
+S3.Tb.Sex.Season.tbl[3,6]= "<0.01"
+S3.Tb.Sex.Season.tbl[4,6]= "<0.01"
+S3.Tb.Sex.Season.tbl[5,6]= "<0.01"
+S3.Tb.Sex.Season.tbl[6,6]= "<0.01"
+Tbl.S3 <-flextable(S3.Tb.Sex.Season.tbl) %>% 
+  autofit(part = "all") %>% 
+  bold(bold = TRUE, i = c(1,2,3,4,5,6)) %>%
+  align(align ="center", part = "all") %>% 
+  font(part = "all", fontname = "Times New Roman")
+
+knitr::knit_print(Tbl.S3)
+```
+\newpage
+Table S4. Tukey-Kramer multiple comparisons of overall seasonal activity rate (min/hr). Activity rate was log (x+1) scale for all *P. vitticeps*. 
+```{r S4,echo= FALSE}
+# bring in, combined and rename tables
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+# raw acceleration points before summary
+raw.data <- readRDS(file = "Final.Analysis/Final.Figure.data/avg.min.final.clean.RDS")
+raw.data.sample.size <- nrow(raw.data)
+# Analysis - Accelerometer Note: Needed to log transform movement min +1log because of high frequencies of zeros
+act.analysis.dat <- readRDS(file = "Final.Analysis/Final.Figure.data/activity.season.sex.analysis.data.RDS")
+activity.analysis.mod <- lmer(log1p(Movement.HR)  ~ Sex + Season + Season*Sex + (1|POVI), act.analysis.dat)
+activity.analysis.mod.final <- as.data.frame(anova(activity.analysis.mod)) # no differences in sex or interaction; season had largest effect 
+Activity.pairwise <- emmeans(activity.analysis.mod, pairwise ~ Season) # sex differences in the spring and summer
+Activity.Season.tbl <- as.data.frame((Activity.pairwise$contrasts))
+Activity.Season.tbl <- Activity.Season.tbl %>% mutate_if(is.numeric, ~round(., 2))
+Activity.Season.tbl[3,6]= "<0.01"
+Activity.Season.tbl[5,6]= "<0.01"
+
+# Table4 Final table
+Tbl.S4 <-flextable(Activity.Season.tbl) %>% 
+  autofit(part = "all") %>% 
+  align(align ="center", part = "all") %>% 
+  bold(bold = TRUE, i = c(3,5,6)) %>%
+  font(part = "all", fontname = "Times New Roman") %>% 
+  fix_border_issues() 
+knitr::knit_print(Tbl.S4)
+```
+\newpage
+Table S5. General additive mixed-models for investigating how performance curves varied across season, sex and their interactions for *Pogona vitticeps*. a) accounted for all individuals in study, b) accounted for smooth per individual, c) accounted for sex as a fixed factor, d) accounted for sex as a fixed factor and allowed for smooth per individual, e) accounted for season as a fixed factor, f) accounted for season as a fixed factor and allowed for smooth per individual, g) accounted for season and sex as a fixed factor, h) accounted for season and sex as a fixed factor and allowed for smooth per individual, i) accounted for season, sex, and their interaction as a fixed factor, and j) accounted for season, sex, and their interaction as a fixed factor and allowed for smooth per individual. Models b:j accounted for random intercept for individual lizard.
+```{r S5,echo= FALSE}
+# bring in, combined and rename tables
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+Temp <- readRDS(file = "Models/Temp.rds")
+Temp.Povi <- readRDS(file = "Models/Temp.Povi.rds")
+Sex <- readRDS(file = "Models/Sex.rds")
+Sex.Povi <- readRDS(file = "Models/Sex.Povi.rds")
+Season <- readRDS(file = "Models/Season.rds")
+Season.Povi <- readRDS(file = "Models/Season.Povi.rds")
+Season.Sex <- readRDS(file = "Models/Season.Sex.rds")
+Season.Sex.Povi <- readRDS(file = "Models/Season.Sex.Povi.rds")
+Season.Sex.Interaction <- readRDS(file = "Models/Season.Sex.Interaction.rds")
+Season.Sex.Interaction.Povi <- readRDS(file = "Models/Season.Sex.Interaction.Povi.rds")
+
+# final table using all of the gam's above
+gam.table <- read.csv("Final.Analysis/Final.Figure.data/GAMM.anova.table.csv",dec = "2")
+TableS5 <- gam.table
+
+# Table S5 Final table
+Tbl.S5 <-flextable(TableS5) %>% 
+  autofit(part = "all") %>%  
+  align(align ="center", j = c(1,3,4,5,6,7)) %>% 
+  bold(bold = TRUE, i = c(1)) %>%
+  font(part = "all", fontname = "Times New Roman") %>% 
+  fix_border_issues() 
+knitr::knit_print(Tbl.S5)
+```
+\newpage
+Table S6. Tukey-Kramer multiple comparisons from Pmax model that accounted for season, sex and the interaction. Contrasts were extracted from seasonal effect. 
+```{r S6,echo= FALSE}
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+# bring in, combined and rename tables
+data.gam <- readRDS(file = "Final.Analysis/Final.Figure.data/data.temp.gam.analysis.rds")
+# top model
+Season.Sex.Interaction.Povi <- readRDS(file = "Models/Season.Sex.Interaction.Povi.rds")
+# gam info
+data.gam$fit <- predict(Season.Sex.Interaction.Povi, type = "response")
+data.gam$se <- predict(Season.Sex.Interaction.Povi, type = "se")
+# summarizing To by id, Sex, Season
+Pmax <- data.gam %>% 
+  group_by(POVI, Sex, Season) %>% 
+  filter(fit == max(fit)) %>% 
+  rename(Pmax = fit)
+Pmax.final <- Pmax %>% 
+  group_by(POVI, Sex, Season) %>% 
+  summarise(Pmax.temp = mean(Tb),
+            Pmax = mean(Pmax))
+#######
+# analysis for Pmax - speed
+To.mod <- lmer(Pmax  ~ Season + Sex + Season*Sex  + (1|POVI), Pmax.final)
+To.mod.sum <- as.data.frame(anova(To.mod)) # no differences between sex, but significant seasona and interaction
+Pmax.Sex.Season <- emmeans(To.mod, pairwise ~ Sex |Season) 
+# extracting season sex contrasts
+Pmax.Sex.Season.df <- as.data.frame(Pmax.Sex.Season$emmeans) %>% 
+  select(c(Season, emmean, SE, Sex, lower.CL, upper.CL))
+# extracting seasonal contrasts
+Pmax.Season <- emmeans(To.mod, pairwise ~ Season)
+Pmax.Season.df <- as.data.frame(Pmax.Season$contrasts)
+Pmax.Season.df <- Pmax.Season.df %>% mutate_if(is.numeric, ~round(., 2))
+Pmax.Season.df[2:6,6]= "<0.01"
+
+# final table using Pmax analysis
+TableS6 <- Pmax.Season.df %>% rename("Contrast" = contrast, "Estimate" = estimate, "t Ratio" = t.ratio, "p value" = p.value)
+
+# Table S6 Final table
+Tbl.S6 <-flextable(TableS6) %>% 
+  autofit(part = "all") %>% 
+  align(align ="center", part = "all") %>% 
+  font(part = "all", fontname = "Times New Roman") %>% 
+  fix_border_issues()
+knitr::knit_print(Tbl.S6)
+```
+\newpage
+Table S7. Tukey-Kramer multiple comparisons from Pmax model that accounted for season, sex and the interaction. Contrasts were extracted from season and sex interaction. 
+```{r S7,echo= FALSE}
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+# bring in, combined and rename tables
+data.gam <- readRDS(file = "Final.Analysis/Final.Figure.data/data.temp.gam.analysis.rds")
+# top model
+Season.Sex.Interaction.Povi <- readRDS(file = "Models/Season.Sex.Interaction.Povi.rds")
+data.gam$fit <- predict(Season.Sex.Interaction.Povi, type = "response")
+data.gam$se <- predict(Season.Sex.Interaction.Povi, type = "se")
+# summarizing To by id, Sex, Season
+Pmax <- data.gam %>% 
+  group_by(POVI, Sex, Season) %>% 
+  filter(fit == max(fit)) %>% 
+  rename(Pmax = fit)
+Pmax.final <- Pmax %>% 
+  group_by(POVI, Sex, Season) %>% 
+  summarise(Pmax.temp = mean(Tb),
+            Pmax = mean(Pmax))
+#######
+# analysis for Pmax - speed
+To.mod <- lmer(Pmax  ~ Season + Sex + Season*Sex  + (1|POVI), Pmax.final)
+To.mod.sum <- as.data.frame(anova(To.mod)) # no differences between sex, but significant seasona and interaction
+Pmax.Sex.Season <- emmeans(To.mod, pairwise ~ Sex |Season) 
+# extracting season sex contrasts
+Pmax.Sex.Season.df <- as.data.frame(Pmax.Sex.Season$emmeans) %>% 
+  select(c(Season, emmean, SE, Sex, lower.CL, upper.CL))
+# extracting seasonal contrasts
+Pmax.Season.sex <- emmeans(To.mod, pairwise ~ Sex| Season)
+Pmax.Season.sex.df <- as.data.frame(Pmax.Season.sex$contrasts)
+Pmax.Season.sex.df <- Pmax.Season.sex.df %>% mutate_if(is.numeric, ~round(., 2))
+
+# final table using Pmax analysis
+TableS7 <- Pmax.Season.sex.df %>% rename("Contrast" = contrast, "Estimate" = estimate, "t Ratio" = t.ratio, "p value" = p.value)
+
+# TableS7 Final table
+Tbl.S7 <-flextable(TableS7) %>% 
+  autofit(part = "all") %>% 
+  align(align ="center", part = "all") %>% 
+  font(part = "all", fontname = "Times New Roman") %>% 
+  fix_border_issues() 
+knitr::knit_print(Tbl.S7)
+```
+\newpage
+Table S8. Model comparisons of spring survival probability (φ) for *Pogona vitticeps*, depending on sex, movement (mins), accuracy of thermoregulation (de), effectiveness of thermoregulation (E), and maximum performance (Pmax). Sex interactions for d_b and E were accounted for because of the differences between males and females during the spring (Table 1). Values within the brackets are nested variables and variables outside of brackets are covariates. Bold values indicate values were considered to have support (ΔAICc of < 2.0).
+```{r S8,echo= FALSE}
+# bring in, combined and rename tables
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+#Mark Table
+TableS8 <- read.csv(file ="Final.Analysis/Final.Figure.data/MARK.Table.csv", dec = "2") %>%
+  rename("Delta AICc" = Delta.AICc, "AICc Weights" = AICc.Weights, "Model Likelihood" = Model.Likelihood, "Number of Parameters" = Num..Par)
+
+# TableS8 Final table
+Tbl.S8 <-flextable(TableS8) %>% 
+  autofit(part = "all") %>% 
+  fit_to_width(7.0)%>%
+  align(align ="center", j = c(2,3,4,5,6)) %>% 
+  bold(bold = TRUE, i = c(1:3)) %>%
+  font(part = "all", fontname = "Times New Roman") %>% 
+  fix_border_issues() 
+knitr::knit_print(Tbl.S8)
+```
+\newpage
+```{r S1fig, echo = FALSE, include = FALSE}
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+#save this figure in the correct folder and bring in to knit
+knitr::include_graphics("Final.Analysis/Final.Figures/FigS1_Te_Tepredict.pdf")
+```
+Figure S1. 
+
+\newpage
+```{r S2fig,echo= FALSE}
+#############
+setwd("~/Dropbox/PhD Pogona/Dissertation/4.Thermal_chapter/R")
+# bring in and arrange data
+db.sex.all.final <- readRDS(file = "Final.Analysis/Final.Figure.data/db.final.RDS")
+Te <-read.csv(file = "Te_models/Te.All.Final.csv") %>% 
+  rename(Te=Value)
+Te$Season <- plyr::revalue(Te$Month, c("June" = "Winter",
+                                       "July" = "Winter",
+                                       "August" = "Winter",
+                                       "September" = "Spring", 
+                                       "October" = "Spring", 
+                                       "November"= "Spring",
+                                       "December" = "Summer", 
+                                       "January" =  "Summer",
+                                       "February" = "Summer",
+                                       "March" = "Autumn", 
+                                       "April" = "Autumn", 
+                                       "May" = "Autumn"))
+#format date and filter to fit accelerometer date "2019-09-01" and times between 0500 - 2100
+Te$Date <- dmy(Te$Date)
+Te <- Te %>% 
+  filter(Date < "2019/09/01") %>% 
+  filter(Time >= 5) %>% 
+  filter(Time <= 21) %>% 
+  mutate(HR = Time)
+min(Te$HR)
+max(Te$HR)
+  
+# pre calibration fig
+Fig <- Te %>%
+  group_by(Date, Season)%>%
+  summarise(Max = max(Te),
+            Min = min(Te),
+            Mean = mean(Te)) 
+Fig.tb <- db.sex.all.final %>% 
+  group_by(Date, Season) %>% 
+  summarise(Max = max(Tb),
+            Min = min(Tb),
+            Mean = mean(Tb)) %>%
+  ungroup()
+Fig.tb <- Fig.tb %>% 
+  filter(Date>"2018-10-09")
+
+
+###############
+# COOL HOT TB AND TE FIG
+# Te ribbon and d
+Fig.S7 <- ggplot(Fig, aes( x = Date, y = Mean)) + 
+  geom_line() + 
+  geom_ribbon(aes(ymin = Min, ymax = Max), alpha = 0.2)  +
+  geom_line(data = Fig.tb, aes(x = Date, y = Mean), linetype = "longdash", color = "green")+
+  geom_line(data = Fig.tb, aes(x = Date, y = Min), linetype = "dotted", color = "blue")+
+  geom_line(data = Fig.tb, aes(x = Date, y = Max), linetype = "dotted", color = "red")+
+  scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y")+
+  scale_y_continuous(breaks=c(-10, 0, 10, 20, 30, 40, 50, 60, 70))+
+  coord_cartesian(ylim = c(-10, 70))+
+  labs(x = NULL, y = "Temperature (°C)")+
+  theme(aspect.ratio = 1)+
+  theme_bw()
+
+#save this figure in the correct folder and bring in to knit
+knitr::include_graphics("./Final.Analysis/Final.Figures/")
+```
+Figure S2. Environmental temperature range and how adult *Pogona vitticeps* thermoregulated during the duration of the study. Black solid lines represent the grand mean environmental temperatures of operative models (Te) for each day and grey bands represent the daily mean minimum and maximum of Te. Coloured lines represent the daily grand mean (green), mean minimum (blue), and mean maximum (red) predicted body temperatures Tb Predict for all lizards during the study.

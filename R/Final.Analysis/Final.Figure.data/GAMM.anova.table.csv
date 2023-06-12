@@ -1,0 +1,11 @@
+Model id,Model,Residual DF,Residual Deviance,DF,AIC,Delt_AIC,Dev.Expl(%)
+j,"Season + Sex + Season*Sex + s(Temprature, by = id) + (1|id)",2756.35,262.57,277.61,1688.84,0,70.57
+h,"Season + Sex + s(Temprature, by = id) + (1|id)",2760.13,264.88,273.83,1707.66,18.82,70.31
+f,"Season + s(Temprature, by = id) + (1|id)",2760.12,264.93,273.84,1707.87,19.03,70.3
+e,Season s(Temperature) + (1|id),2967.9,299.67,66.06,1724.75,35.91,66.41
+d,"Sex + s(Temprature, by = id) + (1|id)",2766.84,270.68,267.12,1760.11,71.27,69.66
+b,s(Temprature) + (1|id),2766.56,270.73,267.4,1760.93,72.09,69.65
+i,Season + Sex + Season*Sex + s(Temprature) + (1|id),2989.09,315.19,44.87,1840.57,151.73,64.67
+g,Season + Sex + s(Temperature) + (1|id),2992.13,317.28,41.84,1854.36,165.52,64.43
+c,Sex + s(Temprature) + (1|id),2986.68,319.93,47.28,1888.45,199.61,64.14
+a,s(Temprature) ,3033.96,358.89,8.96,2152.09,463.25,59.77

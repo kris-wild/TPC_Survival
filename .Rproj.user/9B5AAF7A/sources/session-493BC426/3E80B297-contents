@@ -1,0 +1,64 @@
+```{r Tb predict results, echo = FALSE, include = FALSE}
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+#######
+# Tb body temperature for individuals by sex and season
+#######
+db.sex.all.final <- readRDS(file = "Final.Analysis/Final.Figure.data/db.final.RDS")
+Tb.sample.size <- db.sex.all.final %>% ungroup() %>% group_by(Season) %>% summarise(n =n())
+Tb.mod <- lmer(Tb  ~ Sex + Season + Season*Sex + (1|POVI), db.sex.all.final)
+Tb.mod.sum <- round(as.data.frame(anova(Tb.mod)), digits = 3) # NS Sex; Significant interaction and season
+Tb.anova.pairwise <- emmeans(Tb.mod, pairwise~ Sex |Season,  lmerTest.limit = 67884) # Just summer differences 
+#  just season
+Tb.anova.pairwise.season <- emmeans(Tb.mod, pairwise ~ Season, lmerTest.limit = 67884) 
+
+#### Supplementary tables
+# TABLE S2 by season * sex interaction - Contrasts 
+S2.Tb.Sex.Season.tbl <- as.data.frame(Tb.anova.pairwise$contrasts)
+# TABLE S3 by season - Contrasts
+S3.Tb.Sex.Season.tbl <- as.data.frame(Tb.anova.pairwise.season$contrasts)
+
+
+
+#######
+# db values for individuals by sex and season
+#######
+# note these data are summarised by inividual, date, by the hour. Season, sex are unique
+db.final.mod <- lmer(individual_db ~ Sex + Season + Season*Sex + (1|POVI), db.sex.all.final)
+db.anova.sum <- round(as.data.frame(anova(db.final.mod)), digits = 3)# no sex differences but interaction and season effect
+db.anova.pairwise <- emmeans(db.final.mod, pairwise ~ Sex | Season)
+db.mod.season.tbl <- as.data.frame(db.anova.pairwise$contrasts)
+
+#### Supplementary tables
+# TABLE S4 by season * sex interaction - Contrasts 
+S2.Tb.Sex.Season.tbl <- as.data.frame(Tb.anova.pairwise$contrasts)
+
+```
+
+
+\newpage
+Table S4. General additive mixed-models for investigating how performance curves varied across season, sex and their interactions for Pogona vitticeps. a) accounted for all individuals in study, b) accounted for smooth per individual, c) accounted for sex as a fixed factor, d) accounted for sex as a fixed factor and allowed for smooth per individual, e) accounted for season as a fixed factor, f) accounted for season as a fixed factor and allowed for smooth per individual, g) accounted for season and sex as a fixed factor, h) accounted for season and sex as a fixed factor and allowed for smooth per individual, i) accounted for season, sex, and their interaction as a fixed factor, and j) accounted for season, sex, and their interaction as a fixed factor and allowed for smooth per individual. Models b:j accounted for random intercept for individual lizard.
+```{r Table S4 GAMS,echo= FALSE}
+# bring in, combined and rename tables
+setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
+Temp <- readRDS(file = "Models/Temp.rds")
+Temp.Povi <- readRDS(file = "Models/Temp.Povi.rds")
+Sex <- readRDS(file = "Models/Sex.rds")
+Sex.Povi <- readRDS(file = "Models/Sex.Povi.rds")
+Season <- readRDS(file = "Models/Season.rds")
+Season.Povi <- readRDS(file = "Models/Season.Povi.rds")
+Season.Sex <- readRDS(file = "Models/Season.Sex.rds")
+Season.Sex.Povi <- readRDS(file = "Models/Season.Sex.Povi.rds")
+Season.Sex.Interaction <- readRDS(file = "Models/Season.Sex.Interaction.rds")
+Season.Sex.Interaction.Povi <- readRDS(file = "Models/Season.Sex.Interaction.Povi.rds")
+
+# final table using all of the gam's above
+gam.table <- read.csv("Final.Analysis/Final.Figure.data/GAMM.anova.table.csv",dec = "2") 
+TableS4 <- gam.table 
+# Table1 Final table
+TableS4 <-flextable(TableS4) %>% 
+  autofit(part = "all") %>%  
+  align(align ="center", j = c(1,3,4,5,6,7)) %>% 
+  font(part = "all", fontname = "Times New Roman") %>% 
+  fix_border_issues() 
+knitr::knit_print(TableS4)
+```
