@@ -426,7 +426,7 @@ data.gam$temp <- as.factor(data.gam$temp)
 # summary for figure
 data.gam.fig <- data.gam %>% group_by(Season, Sex, temp, POVI) %>%
   summarise(Tb = mean(Tb),
-            percent95.ms2 = mean(percent95.ms2, na.rm = TRUE))
+            percent95.ms2 = mean(fit, na.rm = TRUE))
 data.gam.fig$temp <- as.numeric(data.gam.fig$temp)
 
 ####### Summer 
@@ -497,7 +497,7 @@ Winter.plot <- ggplot(Winter, aes(x=temp, y=percent95.ms2, color=Sex))+
 # final plot
 p<- cowplot::plot_grid(Spring.plot, Summer.plot, Autumn.plot, Winter.plot, ncol=4)
 #save this figure in the correct folder and bring in to knit
-knitr::include_graphics("./Final.Analysis/Final.Figures/Figure5_TPC.pdf")
+knitr::include_graphics("./Final.Analysis/Final.Figures/Figure5TPC.png")
 ```
 Figure 5. Field thermal performance curves across season and sex in free-ranging *Pogona vitticeps*. Data were extracted from top-performing GAMM (Table S5). Each point is the predicted mean performance (95^th percentile of acceleration) for a given temperature across all individuals for each season and by sex. Females are denoted by the triangles and grey fitted lines, and males are denoted by open circles and black fitted lines. light grey bands denote SE of model fit. 
 \newpage
@@ -522,7 +522,7 @@ Fig6.Mark <- ggplot(data=Reg.dat, aes(x=E, y=X1.S, ymin=X1.S-SE , ymax=X1.S+SE))
   theme(plot.title = element_text(size=12, face="bold", hjust = 0.5))
 
 #save this figure in the correct folder and bring in to knit
-knitr::include_graphics("./Final.Analysis/Final.Figures/Figure6_Survival.pdf")
+knitr::include_graphics("./Final.Analysis/Final.Figures/Figure_6_survival.png")
 ```
 Figure 6. Survivorship as a function of effectiveness of thermoregulation (E index) for free-ranging *Pogona vitticeps*. Data are extracted from candidate model in program Mark. E index generally range from 0-1, where values near zero indicate thermoconformity and values towards 1 indicate precise thermoregulation.
 \newpage
