@@ -16,7 +16,7 @@ options(digits = 2)
 rm(list=ls())
 sessionInfo()
 # Packages
-pacman::p_load("dplyr", "tidyverse", "lubridate", "ggplot2", "plotly", "pbapply","car", "readr", "lmerTest", "emmeans", "AICcmodavg", "nls.multstart", "broom", "purrr", "plotrix", "AICcmodavg", "MuMIn", "stargazer", "jtools", "huxtable", "officer", "grid", "png", "ggimage", "rTPC", "nls.multstart", "ggrepel", "mgcv", "gratia", "gammit", "lubridate", "lmerTest","performance", "kableExtra","flextable")
+pacman::p_load("dplyr", "tidyverse", "lubridate", "ggplot2", "plotly", "pbapply","car", "readr", "lmerTest", "emmeans", "AICcmodavg", "nls.multstart", "broom", "purrr", "plotrix", "AICcmodavg", "MuMIn", "stargazer", "jtools", "huxtable", "officer", "grid", "png", "ggimage", "nls.multstart", "ggrepel", "mgcv", "gratia", "gammit", "lubridate", "lmerTest","performance", "kableExtra","flextable")
 ```
 # Tables & Figures
 \newpage
@@ -413,8 +413,8 @@ setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
 ##### TPC data
 data.gam <- readRDS(file = "Final.Analysis/Final.Figure.data/data.temp.gam.analysis.rds")
 Season.Sex.Interaction.Povi <- readRDS(file = "Models/Season.Sex.Interaction.Povi.rds")
-#data.gam$fit <- predict(Season.Sex.Interaction.Povi, type = "response")
-#data.gam$se <- predict(Season.Sex.Interaction.Povi, type = "se")
+data.gam$fit <- predict(Season.Sex.Interaction.Povi, type = "response")
+data.gam$se <- predict(Season.Sex.Interaction.Povi, type = "se")
 
 # set up data
 data.gam$Season <- factor(data.gam$Season, c("Spring", "Summer", "Autumn", "Winter"))
@@ -426,8 +426,9 @@ data.gam$temp <- as.factor(data.gam$temp)
 # summary for figure
 data.gam.fig <- data.gam %>% group_by(Season, Sex, temp, POVI) %>%
   summarise(Tb = mean(Tb),
-            percent95.ms2 = mean(percent95.ms2 ))
+            percent95.ms2 = mean(percent95.ms2, na.rm = TRUE))
 data.gam.fig$temp <- as.numeric(data.gam.fig$temp)
+
 ####### Summer 
 Spring <- data.gam.fig %>% filter(Season == "Spring")
 Spring.plot <- ggplot(Spring, aes(x=temp, y=percent95.ms2, color=Sex))+  
@@ -681,7 +682,7 @@ Tbl.S6 <-flextable(TableS6) %>%
 knitr::knit_print(Tbl.S6)
 ```
 \newpage
-Table S7. Tukey-Kramer multiple comparisons from Pmax model that accounted for season, sex and the interaction. Contrasts were extracted from season and sex interaction. 
+Table S7. Tukey-Kramer multiple comparisons from Topt model that accounted for season, sex and the interaction.  
 ```{r S7,echo= FALSE}
 setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
 # bring in, combined and rename tables
@@ -700,8 +701,8 @@ Pmax.final <- Pmax %>%
   summarise(Pmax.temp = mean(Tb),
             Pmax = mean(Pmax))
 #######
-# analysis for Pmax - speed
-To.mod <- lmer(Pmax  ~ Season + Sex + Season*Sex  + (1|POVI), Pmax.final)
+# analysis for Topt - speed
+To.mod <- lmer(Pmax.temp  ~ Season + Sex + Season*Sex  + (1|POVI), Pmax.final)
 To.mod.sum <- as.data.frame(anova(To.mod)) # no differences between sex, but significant seasona and interaction
 Pmax.Sex.Season <- emmeans(To.mod, pairwise ~ Sex |Season) 
 # extracting season sex contrasts
