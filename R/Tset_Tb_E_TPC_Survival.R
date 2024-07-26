@@ -601,41 +601,44 @@ pref.95$percent95.ms2 <- as.numeric(as.character(pref.95$percent95.ms2))
 pref.95$POVI <- as.factor(pref.95$POVI)
 pref.95$Sex <- as.factor(pref.95$Sex)
 pref.95$Season <- as.factor(pref.95$Season)
-data.gam <- pref.95 %>%  filter(Sex != "ZZf")
-write_rds(data.gam, file = "R/Final.Analysis/Final.Figure.data/data.temp.gam.analysis.rds")
-data.gam <- readRDS(file = "R/Final.Analysis/Final.Figure.data/data.temp.gam.analysis.rds")
-
+data.gam <- pref.95 %>%  
+  filter(Sex != "ZZf") %>%
+  droplevels()
+saveRDS(data.gam, file = "R/Final.Analysis/Final.Figure.data/data.temp.gam.analysis.rds")
+data.gam <- readRDS(file = "R/Final.Analysis/Final.Figure.data/data.temp.gam.analysis.rds") 
 ############################
 ## 1)  Building GAMM Models
 # smooth on temp
-# Temp <- gam(percent95.ms2 ~ s(temp), method = 'REML', data = data.gam)
+Temp <- gam(percent95.ms2 ~ s(temp), method = 'REML', data = data.gam)
 
 # smooth for individual and their temp
-# Temp.Povi <- gam(percent95.ms2 ~ s(temp, by = POVI) + s(POVI, bs = 're'),  method = 'REML', data = data.gam)
+Temp.Povi <- gam(percent95.ms2 ~ s(temp, by = POVI) + s(POVI, bs = 're'),  method = 'REML', data = data.gam)
 
 # m2 smooth by temp for sex - ID as random
-# Sex <- gam(percent95.ms2 ~ Sex + s(temp, by = Sex) + s(POVI, bs = 're'), method = 'REML', data = data.gam)
+Sex <- gam(percent95.ms2 ~ Sex + s(temp, by = Sex) + s(POVI, bs = 're'), method = 'REML', data = data.gam)
 
 # smooth for individual and their temp - ID as random
-# Sex.Povi <-gam(percent95.ms2 ~ Sex + s(temp, by = POVI) + s(POVI, bs = 're'),  method = 'REML', data = data.gam)
+Sex.Povi <-gam(percent95.ms2 ~ Sex + s(temp, by = POVI) + s(POVI, bs = 're'),  method = 'REML', data = data.gam)
 
 # smooth for temp by season - ID as random
-# Season <- gam(percent95.ms2 ~ Season + s(temp, by = Season) + s(POVI, bs = 're'), method = 'REML', data = data.gam)
+Season <- gam(percent95.ms2 ~ Season + s(temp, by = Season) + s(POVI, bs = 're'), method = 'REML', data = data.gam)
 
 # smooth for individual by season - ID as random
-# Season.Povi <-gam(percent95.ms2 ~ Season + s(temp, by = POVI) + s(POVI, bs = 're'),  method = 'REML', data = data.gam)
+Season.Povi <-gam(percent95.ms2 ~ Season + s(temp, by = POVI) + s(POVI, bs = 're'),  method = 'REML', data = data.gam)
 
 # smooth by temp for season and sex - ID as random
-# Season.Sex <- gam(percent95.ms2 ~ Season + Sex + s(temp) + s(POVI, bs = 're'), method = 'REML', data = data.gam)
+Season.Sex <- gam(percent95.ms2 ~ Season + Sex + s(temp) + s(POVI, bs = 're'), method = 'REML', data = data.gam)
 
 # smooth for individual by season and sex - ID as random
-# Season.Sex.Povi <-gam(percent95.ms2 ~ Season + Sex + s(temp, by = POVI) + s(POVI, bs = 're'),  method = 'REML', data = data.gam)
+Season.Sex.Povi <-gam(percent95.ms2 ~ Season + Sex + s(temp, by = POVI) + s(POVI, bs = 're'),  method = 'REML', data = data.gam)
 
 # smooth  by temp for season, sex, and their interaction - ID as random
-# Season.Sex.Interaction <- gam(percent95.ms2 ~ Season + Sex + Season*Sex + s(temp) + s(POVI, bs = 're'), method = 'REML', data = data.gam)
+Season.Sex.Interaction <- gam(percent95.ms2 ~ Season + Sex + Season*Sex + s(temp) + s(POVI, bs = 're'), method = 'REML', data = data.gam)
 
 # smooth for individual by season, sex, and their interaction - ID as random
-# Season.Sex.Interaction.Povi <- gam(percent95.ms2 ~ Season + Sex + Season*Sex + s(temp, by = POVI) + s(POVI, bs = 're'), method = 'REML', data = data.gam)
+Season.Sex.Interaction.Povi <- gam(percent95.ms2 ~ Season + Sex + Season*Sex + s(temp, by = POVI) + s(POVI, bs = 're'), method = 'REML', data = data.gam)
+
+# Summary of the new model
 ############################
 
 
@@ -643,7 +646,7 @@ data.gam <- readRDS(file = "R/Final.Analysis/Final.Figure.data/data.temp.gam.ana
 # 2)  Saving & Read in GAMM Models
 # save models
 saveRDS(Temp, file = "R/Mod/Temp.rds")
-saveRDS(TR/emp.Povi, file = "Models/Temp.Povi.rds")
+saveRDS(Temp.Povi, file = "R/Models/Temp.Povi.rds")
 saveRDS(Sex, file = "R/Models/Sex.rds")
 saveRDS(Sex.Povi, file = "R/Models/Sex.Povi.rds")
 saveRDS(Season, file = "R/Models/Season.rds")
@@ -652,6 +655,7 @@ saveRDS(Season.Sex, file = "R/Models/Season.Sex.rds")
 saveRDS(Season.Sex.Povi, file = "R/Models/Season.Sex.Povi.rds")
 saveRDS(Season.Sex.Interaction, file = "R/Models/Season.Sex.Interaction.rds")
 saveRDS(Season.Sex.Interaction.Povi, file = "R/Models/Season.Sex.Interaction.Povi.rds")
+
 # read models
 Temp <- readRDS(file = "R/Models/Temp.rds")
 Temp.Povi <- readRDS(file = "R/Models/Temp.Povi.rds")

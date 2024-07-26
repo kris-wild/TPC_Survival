@@ -16,7 +16,7 @@ options(digits = 2)
 rm(list=ls())
 sessionInfo()
 # Packages
-pacman::p_load("dplyr", "tidyverse", "lubridate", "ggplot2", "plotly", "pbapply","car", "readr", "lmerTest", "emmeans", "AICcmodavg", "nls.multstart", "broom", "purrr", "plotrix", "AICcmodavg", "MuMIn", "stargazer", "jtools", "huxtable", "officer", "grid", "png", "ggimage", "nls.multstart", "ggrepel", "mgcv", "gratia", "gammit", "lubridate", "lmerTest","performance", "kableExtra","flextable")
+pacman::p_load("dplyr", "tidyverse", "lubridate", "ggplot2", "plotly", "pbapply","car", "readr", "lmerTest", "emmeans", "AICcmodavg", "nls.multstart", "broom", "purrr", "plotrix", "AICcmodavg", "MuMIn", "stargazer", "jtools", "huxtable", "officer", "grid", "png", "ggimage", "nls.multstart", "ggrepel", "mgcv", "gratia", "gammit", "lubridate", "lmerTest","performance", "kableExtra","flextable", 'tidymv')
 ```
 \newpage
 ```{r Theoretical fig, echo = FALSE, include = FALSE}
@@ -70,8 +70,8 @@ Male.Tb.vs.Te.fig <- ggplot(Male.Tb.Te, aes(x=Season, y=emmean, colour=Sex, grou
   geom_errorbar(aes(ymin=emmean-SE, ymax=emmean+SE), colour="black", width=.25) +
   geom_point(aes(shape=Sex, color=Sex), size=3)+
   geom_line(aes(linetype=Sex)) +
-  scale_shape_manual(values=c(8, 21))+
-  scale_color_manual(values=c("black","black")) +
+  scale_shape_manual(values=c(8, 19))+
+  scale_color_manual(values=c("black","steelblue")) +
   geom_hline(yintercept=32.03080, linetype="dashed", color = "grey34")+
   geom_hline(yintercept=25.33080, linetype="dashed", color = "grey34")+ 
   scale_y_continuous(breaks=c(18, 20, 22, 24, 26, 28, 30, 32, 34, 36))+
@@ -88,7 +88,7 @@ Male.Tb.vs.Te.fig <- ggplot(Male.Tb.Te, aes(x=Season, y=emmean, colour=Sex, grou
                           legend.box.background = element_rect(fill = "transparent", color = NA), # Ensure the legend box is also transparent
                           axis.title.x = element_blank(),
                           axis.text.x = element_blank(),
-                          text = element_text(size = 16))
+                          text = element_text(size = 18))
 # ZWf 6.833333 30.38976 3.416667  33.80642  26.97309
 Female.Tb.Te <- Tb.vs.Te.fig.dat %>% filter(Sex != "ZZm")
 Female.Tb.Te$Sex <- gsub("ZWf", "Female", Female.Tb.Te$Sex)
@@ -102,7 +102,7 @@ Female.Tb.vs.Te.fig <- ggplot(Female.Tb.Te, aes(x=Season, y=emmean, colour=Sex, 
   geom_point(aes(shape=Sex, color=Sex), size=3)+
   geom_line(aes(linetype=Sex)) +
   scale_shape_manual(values=c(8, 19))+
-  scale_color_manual(values=c("black", "#999999")) +
+  scale_color_manual(values=c("black", "darkred")) +
   geom_hline(yintercept=33.80642, linetype="dashed", color = "grey34")+
   geom_hline(yintercept=26.97309, linetype="dashed", color = "grey34")+   
   scale_y_continuous(breaks=c(18, 20, 22, 24, 26, 28, 30, 32, 34, 36))+
@@ -119,7 +119,7 @@ Female.Tb.vs.Te.fig <- ggplot(Female.Tb.Te, aes(x=Season, y=emmean, colour=Sex, 
         legend.box.background = element_rect(fill = "transparent", color = NA), # Ensure the legend box is also transparent
         axis.title.x = element_blank(),
         axis.text.x = element_blank(),
-        text = element_text(size = 16))
+        text = element_text(size = 18))
 ######
 ### Fig2A|B Final:TB by sex
 Fig.2.Tb.Te.figure <- ggpubr::ggarrange(Male.Tb.vs.Te.fig, Female.Tb.vs.Te.fig,
@@ -147,20 +147,21 @@ Fig.2C.Accuracy.Thermoregulation.db <- ggplot(season.db, aes(x=Season, y=emmean,
   geom_errorbar(aes(ymin=emmean-SE, ymax= emmean+SE), colour="black", width=.25) +
   geom_line(aes(linetype=Sex)) +
   geom_point(aes(shape=Sex, color=Sex), size=3) +
-  scale_shape_manual(values=c(19, 21), labels = c("db Female", "db Male")) +
-  scale_color_manual(values=c("#999999", "black"), labels = c("db Female", "db Male")) +
+  scale_shape_manual(values=c(19, 19), labels = c("db Female", "db Male")) +
+  scale_color_manual(values=c("darkred", "steelblue"), 
+                     labels = c("db Female", "db Male")) +
   scale_linetype_manual(values=c("solid", "dashed"), labels = c("db Female", "db Male")) +
   scale_y_continuous(breaks=c(0, 1, 2, 3, 4.0, 5, 6, 7, 8, 9)) +
   coord_cartesian(ylim = c(0, 9)) +
   ylab(expression("Thermoregulation accuracy (" ~d["b"]~")")) +
-  annotate("text", x = 1.5, y = 0, label = "Accurate", fontface = "bold", size = 7) +
-  annotate("text", x = 1.5, y = 8.95, label = "Inaccurate", fontface = "bold", size = 7) +
+  #annotate("text", x = 1.5, y = 0, label = "Accurate", fontface = "bold", size = 7) +
+  #annotate("text", x = 1.5, y = 8.95, label = "Inaccurate", fontface = "bold", size = 7) +
   annotate("text", x = 1, y = 3.2, label = "*", fontface = "bold", size = 9) + # spring differences
   xlab(NULL) +
   theme_classic() +
   theme(legend.position = c(.85, .1), 
         legend.title = element_blank(), 
-        text = element_text(size = 16))
+        text = element_text(size = 18))
 
 ######
 ### Fig 2D de values for individual models by season
@@ -185,19 +186,19 @@ Fig.2D.Accuracy.Thermoregulation.de <- ggplot(de.mod.season.sex.tbl, aes(x=Seaso
   geom_errorbar(aes(ymin=emmean-SE, ymax=emmean+SE), colour="black", width=.25) +
   geom_line(aes(linetype=Te.Analysis)) +
   geom_point(aes(shape=Te.Analysis, color=Te.Analysis), size=3)+
-  scale_shape_manual(values=c(19, 21))+
-  scale_color_manual(values=c("#999999", "black")) +
+  scale_shape_manual(values=c(19, 19))+
+  scale_color_manual(values=c("darkred", "steelblue")) +
   scale_y_continuous(breaks=c(0, 1, 2, 3, 4.0, 5, 6, 7, 8, 9, 10))+
   coord_cartesian(ylim = c(0, 10))+
   ylab(expression("Thermal quality of habitat (" ~d["e"]~")"))+
-  annotate("text", x = 1.5, y = 0, label = "Favorable",fontface = "bold", size = 7)+
-  annotate("text", x = 1.5, y = 10, label = "Unfavorable", fontface = "bold", size = 7)+
+  #annotate("text", x = 1.5, y = 0, label = "Favorable",fontface = "bold", size = 7)+
+  #annotate("text", x = 1.5, y = 10, label = "Unfavorable", fontface = "bold", size = 7)+
   annotate("text", x = 2, y = 4.5, label = "*", fontface = "bold", size = 9)+ # summer differences
   xlab(NULL)+
   theme_classic() +
   theme(legend.position = c(.85, .1))+ 
   theme(legend.title = element_blank(),
-        text = element_text(size = 16))
+        text = element_text(size = 18))
 ######
 # final arrangment for 2C & 2D
 Fig.2.db.de.figure <- ggpubr::ggarrange(Fig.2C.Accuracy.Thermoregulation.db, Fig.2D.Accuracy.Thermoregulation.de,
@@ -241,13 +242,14 @@ Fig.3.E.index.fig <- ggplot(Season, aes(x=Season, y=emmean, fill=Sex)) +
   geom_errorbar(aes(ymin=emmean -SE, ymax=emmean +SE), width=.2,
                 position=position_dodge(.9))+
   labs(x="Season", y = "E index")+
-  annotate("text", x = 1.5, y = .95, label = "Thermoregulator",fontface = "bold")+
-  annotate("text", x = 1.5, y = -.05, label = "Thermoconformer", fontface = "bold")+
+  #annotate("text", x = 1.5, y = .95, label = "Thermoregulator",fontface = "bold")+
+  #annotate("text", x = 1.5, y = -.05, label = "Thermoconformer", fontface = "bold")+
   annotate("text", x = .9, y = .86, label = "*", fontface = "bold", size = 8)+ # spring differences
   geom_segment(aes(x = .6, y = .85, xend = 1.2, yend = .85))+
+  scale_fill_manual(values=c("darkred", "steelblue"))+
   theme_classic() +
-  theme(legend.position = c(.90, .80))+
-  scale_fill_manual(values=c("#999999", "white"))
+  theme(legend.position=c(.90, .80),
+        text = element_text(size = 18))
 
 #save this figure in the correct folder and bring in to knit
 knitr::include_graphics("./Final.Analysis/Final.Figures/Figure3_Eindex.pdf")
@@ -283,23 +285,54 @@ Te.data.fig <- Te %>%
 Te.data.fig$Season <- factor(Te.data.fig$Season, c("Spring", "Summer", "Autumn", "Winter"))
 
 # male plot
+# Define your custom color palette
+custom_colors <- c(
+  "Burrow" = "grey50",     # Sandy Brown
+  "Full_Shade" = "springgreen2", 
+  "Open" = "#DAA505",       # Goldenrod
+  "Open_tree" = "#8B4513",  # Saddle Brown
+  "Tree" = "seagreen4"        # Dark Olive Green
+)
+
 male.tb.te.act.fig <- ggplot() +  
-  geom_point(data = Male.Tb, aes(HR,Tb), 
-             fill = "white", color = "black",
-             size = 2.2, shape = 21)+
-  geom_point(data = Male.Activity, aes(HR,Movement.HR), 
-             fill = "black", color = "black", 
-             size = 2, shape = 17)+
-  geom_point(data = Te.data.fig, aes(HR,Te, fill = Type, color = Type)) +
-  geom_line(data = Male.Tb, aes(HR,Tb), size = 0.3)+
-  scale_y_continuous(sec.axis = sec_axis(~ ., name = "Activity (min/hr)"))+
-  geom_line(data = Male.Activity, aes(HR,Movement.HR), size = 0.3)+
-  geom_hline(yintercept=32.03080, linetype="dashed", color = "grey34")+
-  geom_hline(yintercept=25.33080, linetype="dashed", color = "grey34")+ 
-  labs(x = NULL, y = "Temperature (°C)") +
-  facet_grid(~Season) +
-  coord_cartesian(xlim = c(5, 21))+
-  theme_bw()
+  geom_point(data = Te.data.fig, aes(HR, Te, fill = Type, color = Type)) +
+  scale_y_continuous(sec.axis = sec_axis(~ ., name = "Activity (min/hr)")) +
+  geom_line(data = Male.Activity, aes(HR, Movement.HR), size = 0.3) +
+  geom_hline(yintercept = 32.03080, linetype = "dashed", color = "grey34") +
+  geom_hline(yintercept = 25.33080, linetype = "dashed", color = "grey34") + 
+  labs(x = NULL, y = "Temperature (°C)", fill = "Habitat", color = "Habitat") +
+  facet_grid(~ Season, labeller = as_labeller(c("Spring" = "Spring",
+                                                "Summer" = "Summer",
+                                                "Autumn" = "Autumn",
+                                                "Winter" = "Winter"))) +
+  coord_cartesian(xlim = c(5, 21)) +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors) +
+  geom_line(data = Male.Tb, aes(HR, Tb), size = 0.3) +
+  geom_point(data = Male.Tb, aes(HR, Tb), 
+             fill = "white", color = "steelblue",
+             size = 2.2, shape = 21) +
+  geom_point(data = Male.Activity, aes(HR, Movement.HR), 
+             fill = "steelblue", color = "black", 
+             size = 2, shape = 17) +
+  theme_bw() +
+  theme(legend.position = c(0.85, 0.85), # Adjust the legend position as needed
+    legend.background = element_rect(fill = alpha('white', 0)), # Fully transparent legend background
+    legend.box = "vertical", # Arrange legend in vertical boxes
+    legend.box.spacing = unit(0.5, "cm"), # Space between legend boxes
+    text = element_text(size = 16),
+    legend.title = element_text(size = 14, face = "bold"), # Customize legend title
+    legend.text = element_text(size = 12), # Customize legend text size
+    strip.background = element_blank(), # Remove gray boxes from facets
+    strip.text.x = element_text(size = 16, face = "bold"), # Customize facet labels
+    plot.title = element_blank(), # Remove the plot title
+    panel.grid.major = element_blank(), # Remove major grid lines
+    panel.grid.minor = element_blank(), # Remove minor grid lines
+    panel.background = element_blank(), # Remove panel background
+    panel.border = element_rect(color = "black", fill = NA))+ # Keep panel border
+    guides(fill = guide_legend(ncol = 2), 
+           color = guide_legend(ncol = 2))
+
 
 # female
 Female.Tb <- Tb.predict.dat%>% filter(Sex != "ZZm") %>% 
@@ -313,27 +346,49 @@ Female.Tb$Season <- factor(Female.Tb$Season, c("Spring", "Summer", "Autumn", "Wi
 Female.Activity <- mydata.final.mm %>% filter(Sex != "ZZm")
 Female.Activity$Season <- factor(Female.Activity$Season, c("Spring", "Summer", "Autumn", "Winter"))
 female.tb.te.act.fig <- ggplot() +  
-  geom_point(data = Female.Tb, aes(HR,Tb), 
-             fill = "#999999", color = "black",
-             size = 2.2, shape = 21)+
-  geom_point(data = Female.Activity, aes(HR,Movement.HR), 
+  geom_point(data = Te.data.fig, aes(HR, Te, fill = Type, color = Type)) +
+  scale_y_continuous(sec.axis = sec_axis(~ ., name = "Activity (min/hr)")) +
+  geom_line(data = Female.Activity, aes(HR, Movement.HR), size = 0.3) +
+  geom_hline(yintercept = 32.03080, linetype = "dashed", color = "grey34") +
+  geom_hline(yintercept = 25.33080, linetype = "dashed", color = "grey34") + 
+  labs(x = 'Time of day (h)', y = "Temperature (°C)", fill = "Habitat", color = "Habitat") +
+  facet_grid(~ Season, labeller = as_labeller(c("Spring" = "Spring",
+                                                "Summer" = "Summer",
+                                                "Autumn" = "Autumn",
+                                                "Winter" = "Winter"))) +
+  coord_cartesian(xlim = c(5, 21)) +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors) +
+  geom_line(data = Female.Tb, aes(HR, Tb), size = 0.3) +
+  geom_point(data = Female.Tb, aes(HR, Tb), 
+             fill = "white", color = "darkred",
+             size = 2.2, shape = 21) +
+  geom_point(data = Female.Activity, aes(HR, Movement.HR), 
              fill = "black", color = "black", 
-             size = 2, shape = 17)+
-  geom_point(data = Te.data.fig, aes(HR,Te, fill = Type, color = Type)) +
-  scale_y_continuous(sec.axis = sec_axis(~ ., name = "Activity (min/hr)"))+
-  geom_line(data = Female.Tb, aes(HR,Tb), size = 0.3)+
-  geom_line(data = Female.Activity, aes(HR,Movement.HR), size = 0.3)+
-  geom_hline(yintercept=33.80642, linetype="dashed", color = "grey34")+
-  geom_hline(yintercept=26.97309, linetype="dashed", color = "grey34")+ 
-  labs(x = "Time of day (hr)", y = "Temperature (°C)") +
-  coord_cartesian(xlim = c(5, 21))+
-  facet_grid(~Season) +
-  theme_bw()
+             size = 2, shape = 17) +
+  theme_bw() +
+  theme(legend.position = c(0.85, 0.85), # Adjust the legend position as needed
+    legend.background = element_rect(fill = alpha('white', 0)), # Fully transparent legend background
+    legend.box = "vertical", # Arrange legend in vertical boxes
+    legend.box.spacing = unit(0.5, "cm"), # Space between legend boxes
+    text = element_text(size = 16),
+    legend.title = element_text(size = 14, face = "bold"), # Customize legend title
+    legend.text = element_text(size = 12), # Customize legend text size
+    strip.background = element_blank(), # Remove gray boxes from facets
+    strip.text.x = element_text(size = 16, face = "bold"), # Customize facet labels
+    plot.title = element_blank(), # Remove the plot title
+    panel.grid.major = element_blank(), # Remove major grid lines
+    panel.grid.minor = element_blank(), # Remove minor grid lines
+    panel.background = element_blank(), # Remove panel background
+    panel.border = element_rect(color = "black", fill = NA))+ # Keep panel border
+    guides(fill = guide_legend(ncol = 2), 
+           color = guide_legend(ncol = 2))
+
 
 #############
 # Fig4 Final: Tb, Te, Activity
 Fig.4.Tb.Te.Activity.fig<- ggpubr::ggarrange(male.tb.te.act.fig, female.tb.te.act.fig,
-                                  font.label = (size = 10), 
+                                  font.label = (size = 32), 
                                   hjust = - 0.7,
                                   vjust = 2.0 ,
                                   labels = c( "A-Male", "B-Female"),
@@ -352,69 +407,54 @@ setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
 your_data <- readRDS(file = "Final.Analysis/Final.Figure.data/data.temp.gam.analysis.rds") %>% 
   filter(Sex != 'ZZf')
 
-# Step 2: Fit the GAM Model
+# Step 2: grab fit from the GAM Model
 gam_model <- readRDS(file = "Models/Season.Sex.Interaction.Povi.rds")
-
-# Step 3: Create a Data Frame for Prediction
-representative_povi <- unique(your_data$POVI)[1]  # Use the first level, adjust as needed
-
-new_data <- expand.grid(
-  temp = seq(min(your_data$temp), max(your_data$temp), length.out = 100),
-  Season = unique(your_data$Season),
-  Sex = unique(your_data$Sex),  # Ensure this matches the filtered data
-  POVI = representative_povi  # Include the representative POVI level
-)
-
-# Step 4: Drop Unused Factor Levels
-new_data$Sex <- factor(new_data$Sex, levels = levels(your_data$Sex))
-
-# Step 5: Make Predictions and Calculate Standard Errors
-pred <- predict(gam_model, newdata = new_data, type = "link", se.fit = TRUE)
-new_data$predicted <- pred$fit
-new_data$se <- pred$se.fit
-new_data <- new_data %>%
-  mutate(
-    lower = predicted - se,
-    upper = predicted + se
-  )
+gam_model_data <- plot_smooths(Season.Sex.Interaction.Povi, temp, Sex, facet_terms = Season)
+gam_model_data <- as.data.frame(gam_model_data$data)
 
 # SPRING
-Spring <- new_data %>% filter(Season == "Spring")
+Spring <- gam_model_data %>% filter(Season == "Spring")
 Spring.plot <- ggplot() +  
-  geom_point(data = your_data %>% filter(Season == "Spring"), aes(x = temp, y = percent95.ms2, shape = Sex, color = Sex), size = 2) +
+  geom_point(data = your_data %>% 
+               filter(Season == "Spring"), 
+             aes(x = temp, y = percent95.ms2, shape = Sex, color = Sex), size = 2) +
   scale_shape_manual(values = c(17, 21)) +
-  scale_color_manual(values = c( "grey65", "black"), labels = c("Female", "Male")) +
-  scale_fill_manual(values = c('grey70', "black")) +  # Ensure fill colors for the ribbon
+  scale_color_manual(values = c( 'darkred', "steelblue"), labels = c("Female", "Male")) +
+  scale_fill_manual(values = c('darkred', "steelblue")) +  # Ensure fill colors for the ribbon
   ylab(bquote("95th"~"percentile"~"of"~"acceleration ms"^-2)) +
   xlab(expression(T[b~Predict])) +
-  coord_cartesian(xlim = c(5, 50), ylim = c(0, 1.8)) +
-  scale_x_continuous(breaks = seq(0, 50, 5)) +
+  coord_cartesian(xlim = c(10, 50), ylim = c(0.06, 1.8)) +
+  scale_x_continuous(breaks = seq(10, 50, 5)) +
   scale_y_continuous(breaks = seq(0, 1.8, .2)) +
-  geom_ribbon(data = Spring, aes(x = temp, ymin = lower, ymax = upper, fill = Sex), alpha = 0.2) +
-  geom_line(data = Spring, aes(x = temp, y = predicted, color = Sex), size = 1) +  # Set the line size for better visibility
+  geom_ribbon(data = Spring, aes(x = temp, ymin = CI_lower, 
+                                 ymax = CI_upper, fill = Sex), alpha = 0.2) +
+  geom_line(data = Spring, aes(x = temp, y = percent95.ms2, color = Sex), size = 1) +  
   theme_bw() +
   ggtitle("Spring") +
   theme(legend.position = "none",
         text = element_text(size = 16),
-        plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+        plot.title = element_text(size = 18, 
+                                  face = "bold", hjust = 0.5),
         panel.grid.major = element_blank(),  # Remove major grid lines
         panel.grid.minor = element_blank())
 
 
+
 ###### Summer
-Summer <- new_data %>% filter(Season == "Summer")
+Summer <- gam_model_data %>% filter(Season == "Summer")
 Summer.plot <- ggplot() +  
   geom_point(data = your_data %>% filter(Season == "Summer"), aes(x = temp, y = percent95.ms2, shape = Sex, color = Sex), size = 2) +
   scale_shape_manual(values = c(17, 21)) +
-  scale_color_manual(values = c( "grey65", "black"), labels = c("Female", "Male")) +
-  scale_fill_manual(values = c('grey70', "black")) +
+  scale_color_manual(values = c( 'darkred', "steelblue"), labels = c("Female", "Male")) +
+  scale_fill_manual(values = c('darkred', "steelblue")) +
   ylab(NULL) +  # Remove Y-axis label
   xlab(expression(T[b~Predict])) +
-  coord_cartesian(xlim = c(5, 50), ylim = c(0, 1.8)) +
-  scale_x_continuous(breaks = seq(0, 50, 5)) +
+  coord_cartesian(xlim = c(10, 50), ylim = c(0.06, 1.8)) +
+  scale_x_continuous(breaks = seq(10, 50, 5)) +
   scale_y_continuous(breaks = seq(0, 1.8, .2)) +
-  geom_ribbon(data = Summer, aes(x = temp, ymin = lower, ymax = upper, fill = Sex), alpha = 0.2) +
-  geom_line(data = Summer, aes(x = temp, y = predicted, color = Sex), size = 1) +  # Set the line size for better visibility
+  geom_ribbon(data = Summer, aes(x = temp, ymin = CI_lower, 
+                                 ymax = CI_upper, fill = Sex), alpha = 0.2) +
+  geom_line(data = Summer, aes(x = temp, y = percent95.ms2, color = Sex), size = 1)+
   theme_bw() +
   ggtitle("Summer") +
   theme(legend.position = "none",
@@ -425,20 +465,21 @@ Summer.plot <- ggplot() +
 
 
 ###### Autumn
-Autumn <- new_data %>% filter(Season == "Autumn")
+Autumn <- gam_model_data %>% filter(Season == "Autumn")
 Autumn.plot <- ggplot() +  
   geom_point(data = your_data %>% filter(Season == "Autumn"), 
              aes(x = temp, y = percent95.ms2, shape = Sex, color = Sex), size = 2) +
   scale_shape_manual(values = c(17, 21)) +
-  scale_color_manual(values = c( "grey65", "black"), labels = c("Female", "Male")) +
-  scale_fill_manual(values = c('grey70', "black")) +
+  scale_color_manual(values = c( "darkred", "steelblue"), labels = c("Female", "Male")) +
+  scale_fill_manual(values = c('darkred', "steelblue")) +
   xlab(expression(T[b~Predict])) +
   ylab(NULL) +  # Remove Y-axis label
-  coord_cartesian(xlim = c(5, 50), ylim = c(0, 1.8)) +
-  scale_x_continuous(breaks = seq(0, 50, 5)) +
+  coord_cartesian(xlim = c(10, 50), ylim = c(0.06, 1.8)) +
+  scale_x_continuous(breaks = seq(10, 50, 5)) +
   scale_y_continuous(breaks = seq(0, 1.8, .2)) +
-  geom_ribbon(data = Autumn, aes(x = temp, ymin = lower, ymax = upper, fill = Sex), alpha = 0.2) +
-  geom_line(data = Autumn, aes(x = temp, y = predicted, color = Sex), size = 1) +  # Set the line size for better visibility
+  geom_ribbon(data = Autumn, aes(x = temp, ymin = CI_lower, 
+                                 ymax = CI_upper, fill = Sex), alpha = 0.2) +
+  geom_line(data = Autumn, aes(x = temp, y = percent95.ms2, color = Sex), size = 1)+
   theme_bw() +
   ggtitle("Autumn") +
   theme(legend.position = "none",
@@ -450,22 +491,22 @@ Autumn.plot <- ggplot() +
 
 
 ###### Winter
-Winter <- new_data %>% 
-  filter(Season == "Winter") 
+Winter <- gam_model_data %>%filter(Season == "Winter") 
 
 Winter.plot <- ggplot() +  
   geom_point(data = your_data %>% filter(Season == "Winter"), 
              aes(x = temp, y = percent95.ms2, shape = Sex, color = Sex), size = 2) +
   scale_shape_manual(values = c(17, 21), labels = c("Female", "Male")) +
-  scale_color_manual(values = c( "grey65", "black"), labels = c("Female", "Male")) +
-  scale_fill_manual(values = c('grey70', "black")) +
+  scale_color_manual(values = c( 'darkred', "steelblue"), labels = c("Female", "Male")) +
+  scale_fill_manual(values = c('darkred', "steelblue")) +
   ylab(NULL) +  # Remove Y-axis label
   xlab(expression(T[b~Predict])) +
-  coord_cartesian(xlim = c(5, 50), ylim = c(0, 1.8)) +
-  scale_x_continuous(breaks = seq(0, 50, 5)) +
+  coord_cartesian(xlim = c(10, 50), ylim = c(0.06, 1.8)) +
+  scale_x_continuous(breaks = seq(10, 50, 5)) +
   scale_y_continuous(breaks = seq(0, 1.8, .2)) +
-  geom_ribbon(data = Winter, aes(x = temp, ymin = lower, ymax = upper, fill = Sex), alpha = 0.2) +
-  geom_line(data = Winter, aes(x = temp, y = predicted, color = Sex), size = 1) +  # Set the line size for better visibility
+  geom_ribbon(data = Winter, aes(x = temp, ymin = CI_lower, 
+                                 ymax = CI_upper, fill = Sex), alpha = 0.2) +
+  geom_line(data = Winter, aes(x = temp, y = percent95.ms2, color = Sex), size = 1)+
   theme_bw() +
   ggtitle("Winter") +
   theme(
@@ -482,7 +523,7 @@ Winter.plot <- ggplot() +
 
 
 
-p<- cowplot::plot_grid(Spring.plot, Summer.plot, Autumn.plot, Winter.plot, ncol=4)
+Figure_5_TPC<- cowplot::plot_grid(Spring.plot, Summer.plot, Autumn.plot, Winter.plot, ncol=4)
 
 #save this figure in the correct folder and bring in to knit
 knitr::include_graphics("./Final.Analysis/Final.Figures/Figure5_TPC.pdf")
@@ -494,24 +535,26 @@ Figure 5. Thermal performance curves of free-ranging Pogona vitticeps across dif
 #####  #####  #####  SURIVAL #####  #####  #####  #####  #####  
 # MARK OUTPUT
 setwd('~/Dropbox/RWorkingDirectory/TPC_Survival/R')
-dat <- read.csv(file = "Final.Analysis/Final.Figure.data/MARK_Outputs/Sex_Topt_survival.csv")
-survival_plot <- ggplot(dat, aes(x = Pmax*100, # back transform because MARK makes you put parameters in 0-1
-                y = Survial, color = Sex, linetype = Sex)) + 
-  geom_line() + 
-  geom_ribbon(aes(ymin = Survial - SE, ymax = Survial + SE, fill = Sex), alpha = 0.2) +
-  scale_color_manual(values = c("grey34", "black")) +
-  scale_fill_manual(values = c("grey34", "black")) +
+dat <- read.csv(file = "Final.Analysis/Final.Figure.data/MARK_Outputs/Sex_Topt_survival.csv") %>% 
+  rename(Survival = Survial)
+Figure_6_survival <- ggplot(dat, aes(x = Pmax * 100, # back transform because MARK makes you put parameters in 0-1
+                                 y = Survival, color = Sex, linetype = Sex)) + 
+  geom_line(size = 1) + 
+  geom_ribbon(aes(ymin = Survival - SE, ymax = Survival + SE, fill = Sex), alpha = 0.2) +
+  scale_fill_manual(values = c("darkred", "steelblue")) +  # Different shades of grey for ribbon fill
+  scale_linetype_manual(values = c("solid", "longdash")) +  
+  scale_color_manual(values = c("grey60", "black")) +  
   labs(x = expression(95^th ~ percentile ~ of ~ acceleration ~ (ms^{-2})), y = "Survival") + 
   theme_bw() +
   theme(
-    text = element_text(size = 20),  # Set text size
+    text = element_text(size = 18),  # Set text size
     panel.grid.major = element_blank(), 
     panel.grid.minor = element_blank(),
-    #panel.border = element_blank(),
     panel.background = element_rect(fill = "white", colour = NA), 
     legend.position = c(0.90, 0.90),
     legend.background = element_rect(fill = "transparent")
   )
+
 #save this figure in the correct folder and bring in to knit
 knitr::include_graphics("./Final.Analysis/Final.Figures/Figure6_Survival.pdf")
 ```
