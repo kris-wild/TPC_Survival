@@ -16,8 +16,8 @@ options(digits = 2)
 rm(list=ls())
 sessionInfo()
 # Packages
-pacman::p_load("dplyr", "tidyverse", "lubridate", "ggplot2", "plotly", "pbapply","car", "readr", "lmerTest", "emmeans", "AICcmodavg", "nls.multstart", "broom", "purrr", "plotrix", "AICcmodavg", "MuMIn", "stargazer", "jtools", "huxtable", "officer", "grid", "png", "ggimage", "nls.multstart", "ggrepel", "mgcv", "gratia", "gammit", "lubridate", "lmerTest","performance", "kableExtra","flextable", 'tidymv')
-```
+pacman::p_load("dplyr", "tidyverse", "lubridate", "ggplot2", "plotly", "pbapply","car", "readr", "lmerTest", "emmeans", "AICcmodavg", "nls.multstart", "broom", "purrr", "plotrix", "AICcmodavg", "MuMIn", "stargazer", "jtools", "huxtable", "officer", "grid", "png", "ggimage", "nls.multstart", "ggrepel", "mgcv", "gratia", "gammit", "lubridate", "lmerTest","performance", "kableExtra","flextable", "tidygam")
+``````
 \newpage
 ```{r Theoretical fig, echo = FALSE, include = FALSE}
 setwd("~/Dropbox/RWorkingDirectory/TPC_Survival/R")
@@ -408,8 +408,8 @@ your_data <- readRDS(file = "Final.Analysis/Final.Figure.data/data.temp.gam.anal
   filter(Sex != 'ZZf')
 
 # Step 2: grab fit from the GAM Model
-gam_model <- readRDS(file = "Models/Season.Sex.Interaction.Povi.rds")
-gam_model_data <- plot_smooths(Season.Sex.Interaction.Povi, temp, Sex, facet_terms = Season)
+Season.Sex.Interaction.Povi <- readRDS(file = "Models/Season.Sex.Interaction.Povi.rds")
+gam_model_data <- tidymv::plot_smooths(Season.Sex.Interaction.Povi, temp, Sex, facet_terms = Season)
 gam_model_data <- as.data.frame(gam_model_data$data)
 
 # SPRING
